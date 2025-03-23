@@ -299,8 +299,7 @@ export function AvatarUpload({ userId, currentAvatarUrl, onAvatarUpdated, onErro
           <div className="flex justify-end gap-2">
             <Button 
               onClick={handleCropCancel} 
-              variant="outline"
-              className="border-palette-purple hover:bg-palette-purple/20"
+              className="bg-palette-purple/50 hover:bg-palette-purple/70"
             >
               <X className="w-4 h-4 mr-2" />
               Cancel
