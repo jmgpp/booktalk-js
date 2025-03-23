@@ -38,7 +38,7 @@ export default function HomePage() {
       <div className="min-h-screen bg-palette-darkPurple flex items-center justify-center">
         <div className="text-center text-palette-textLight">
           <div className="animate-pulse mb-4">
-            <BookOpen className="h-12 w-12 mx-auto text-palette-pink" />
+            <Logo size="large" className="mx-auto" />
           </div>
           <h1 className="text-2xl font-bold mb-2">Loading BookTalk...</h1>
           <p className="text-palette-textLight/70">Please wait while we get things ready</p>

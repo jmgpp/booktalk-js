@@ -9,16 +9,16 @@ interface LogoProps {
 export function Logo({ className, size = 'medium' }: LogoProps) {
   // Size mappings
   const sizes = {
-    small: 24,
-    medium: 36,
-    large: 64
+    small: 32,
+    medium: 48,
+    large: 80
   }
   
   const width = sizes[size]
-  const height = width * 1.25 // Maintain aspect ratio
-  
+  const height = width // Logo is approximately square
+
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('relative inline-flex items-center justify-center', className)}>
       <Image
         src="/logo.png"
         alt="BookTalk Logo"
