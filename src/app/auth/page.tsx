@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { SignInForm } from '@/components/auth/sign-in-form';
 import { SignUpForm } from '@/components/auth/sign-up-form';
-import { BookOpen } from 'lucide-react';
+import { Logo } from "@/components/ui/logo"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -122,7 +122,7 @@ export default function AuthPage() {
       <div className="min-h-screen bg-palette-darkPurple flex flex-col items-center justify-center p-4">
         <div className="text-center mb-6">
           <div className="animate-pulse mb-4">
-            <BookOpen className="h-12 w-12 mx-auto text-palette-pink" />
+            <Logo size="large" className="mx-auto" />
           </div>
           <h1 className="text-2xl font-bold mb-2 text-palette-textLight">Loading...</h1>
           <p className="text-palette-textLight/70">Please wait while we check your authentication status.</p>
@@ -137,7 +137,7 @@ export default function AuthPage() {
       <div className="min-h-screen bg-palette-darkPurple flex flex-col items-center justify-center p-4">
         <div className="text-center mb-6">
           <div className="mb-4">
-            <BookOpen className="h-16 w-16 mx-auto text-palette-pink" />
+            <Logo size="large" className="mx-auto" />
           </div>
           <h1 className="text-3xl font-bold mb-2 text-palette-textLight">Login Successful</h1>
           <p className="text-palette-textLight/70">Redirecting to dashboard...</p>
@@ -156,8 +156,7 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         {/* Logo and branding */}
         <div className="text-center mb-8">
-          <BookOpen className="h-16 w-16 mx-auto text-palette-pink mb-4" />
-          <h1 className="text-3xl font-bold text-palette-textLight">BookTalk</h1>
+          <Logo size="large" className="mx-auto mb-4" />
           <p className="text-lg text-palette-textLight/70 mt-2">Share and discuss your favorite books</p>
         </div>
         

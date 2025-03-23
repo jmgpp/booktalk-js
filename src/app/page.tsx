@@ -19,6 +19,7 @@ import {
   Clock,
 } from "lucide-react"
 import Link from "next/link"
+import { Logo } from "@/components/ui/logo"
 
 export default function HomePage() {
   const { user, profile, loading, profileLoading, signOut } = useAuth()
@@ -56,8 +57,7 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 w-full border-b border-palette-purple/50 bg-palette-darkPurple/95 backdrop-blur supports-[backdrop-filter]:bg-palette-darkPurple/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-palette-pink" />
-            <span className="text-xl font-bold text-palette-textLight">BookTalk</span>
+            <Logo size="small" />
           </div>
 
           <div className="hidden md:flex items-center gap-6">
