@@ -302,7 +302,7 @@ export default function ProfilePage() {
                         type="email"
                         value={formData.email}
                         disabled
-                        className="bg-palette-darkPurple/70 text-white border-palette-purple border-opacity-50 opacity-70"
+                        className="bg-palette-darkPurple/70 text-white opacity-70 border-0"
                       />
                       <p className="text-xs mt-1 text-palette-textLight/70">
                         Your email cannot be changed.
@@ -318,7 +318,7 @@ export default function ProfilePage() {
                         name="bio"
                         value={formData.bio ?? ''}
                         onChange={handleInputChange}
-                        className="w-full bg-palette-darkPurple/70 text-white border border-palette-purple border-opacity-50 rounded-md p-2.5 h-24 resize-none"
+                        className="w-full bg-palette-darkPurple/70 text-white border border-palette-purple border-opacity-50 rounded-md p-2.5 h-32 resize-none"
                         placeholder="Tell others about yourself..."
                       />
                     </div>
@@ -354,7 +354,7 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
                         <h3 className="text-lg font-medium mb-2">About</h3>
-                        <div className="bg-palette-darkPurple/30 p-4 rounded-lg">
+                        <div className="bg-palette-darkPurple/30 p-4 rounded-lg min-h-[188px]">
                           {formData.bio ? (
                             <p className="text-palette-textLight/90">{formData.bio}</p>
                           ) : (

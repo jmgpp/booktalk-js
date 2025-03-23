@@ -103,12 +103,14 @@ export default function HomePage() {
               >
                 <Bell className="h-5 w-5" />
               </Button>
-              <Avatar className="border-2 border-palette-pink">
-                <AvatarImage src={profile?.avatar_url || `/api/avatar?name=${encodeURIComponent(profile?.username || user?.email?.substring(0, 2) || "U")}`} alt="User" />
-                <AvatarFallback className="bg-palette-purple text-white">
-                  {profile?.username?.substring(0, 2) || user?.email?.substring(0, 2) || "U"}
-                </AvatarFallback>
-              </Avatar>
+              <Link href="/profile">
+                <Avatar className="border-2 border-palette-pink hover:border-palette-pink/70 transition-colors cursor-pointer">
+                  <AvatarImage src={profile?.avatar_url || `/api/avatar?name=${encodeURIComponent(profile?.username || user?.email?.substring(0, 2) || "U")}`} alt="User" />
+                  <AvatarFallback className="bg-palette-purple text-white">
+                    {profile?.username?.substring(0, 2) || user?.email?.substring(0, 2) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
             </div>
           </div>
 
