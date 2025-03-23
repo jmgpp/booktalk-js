@@ -27,20 +27,20 @@ A social network for book readers with integrated EPUB reading capabilities acce
 ## Technical Architecture
 
 ### Frontend
-- React for web application
-- React Native for mobile applications
-- Shared component library and business logic where possible
-- Monorepo structure to maximize code reuse while allowing platform-specific optimizations
+- Next.js 14 app router with React for web application 
+- React Native for mobile applications (future)
+- Tailwind CSS for styling with custom color palette
+- Shadcn/UI component library
 
 ### Backend
-- Next.js for API routes and server-side rendering
-- Supabase for authentication, database, and storage
-- Real-time capabilities for notifications and live updates
+- Next.js API routes for server-side logic
+- Supabase for authentication, database, storage, and row-level security
+- Real-time capabilities for notifications and live updates (planned)
 
 ### EPUB Integration
-- Using JavaScript EPUB libraries (epub.js or similar)
-- Custom React wrapper with enhanced UI
-- Integration with backend for social reading features
+- Using JavaScript EPUB libraries (epub.js or similar) - pending implementation
+- Custom React wrapper with enhanced UI - pending implementation
+- Integration with backend for social reading features - pending implementation
 
 ## Development Approach
 - Solo developer with AI assistance
@@ -48,24 +48,28 @@ A social network for book readers with integrated EPUB reading capabilities acce
 - Incremental development starting with core features
 - Building a functional prototype that can be iterated upon
 
-## Database Schema (Preliminary)
-- Users (profile information, preferences)
-- Books (metadata, possibly from external APIs)
-- UserBooks (relationship between users and books, including reading status)
-- Highlights (user annotations and highlights)
-- BookClubs (group information and membership)
-- Discussions (threads and comments)
-- ReadingProgress (tracking reading completion)
+## Database Schema (Implemented)
+- Users (Supabase Auth)
+- Profiles (profile information, preferences)
+- Books (metadata, pending implementation)
+- UserBooks (relationship between users and books, pending implementation)
+- Highlights (user annotations and highlights, pending implementation)
+- BookClubs (group information and membership, pending implementation)
+- Discussions (threads and comments, pending implementation)
+- ReadingProgress (tracking reading completion, pending implementation)
 
-## Implementation Priorities
-1. Core authentication and user profiles
-2. Basic EPUB reader integration
-3. Personal libraries and reading tracking
-4. Social connections and activity feeds
-5. Book clubs and discussions
-6. Enhanced reading features
-7. Mobile app development
-8. Cross-platform synchronization
+## Implementation Progress
+1. ✅ Core authentication with Supabase Auth
+2. ✅ User profiles with avatar upload capabilities
+3. ✅ User profile page with reading stats UI
+4. ✅ Homepage with responsive design
+5. ⏳ Personal libraries and reading tracking (partial UI implemented)
+6. ⏳ Social connections and activity feeds
+7. ⏳ Book clubs and discussions
+8. ⏳ EPUB reader integration
+9. ⏳ Enhanced reading features
+10. ⏳ Mobile app development
+11. ⏳ Cross-platform synchronization
 
 ## Current Status
-Planning phase - establishing architecture and technology choices before beginning implementation.
+Initial implementation phase - Core user functionality is in place with authentication and profiles. The UI framework has been established with a custom color palette and responsive design. Next steps include implementing book management, social features, and the EPUB reader integration.
