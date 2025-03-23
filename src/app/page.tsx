@@ -63,10 +63,22 @@ export default function HomePage() {
           <div className="hidden md:flex items-center gap-6">
             <nav className="flex items-center gap-6">
               <Link
-                href="#"
-                className="text-sm font-medium text-palette-textLight hover:text-palette-pink transition-colors"
+                href="/books/reader"
+                className="text-sm font-medium text-palette-textLight hover:text-palette-blue transition-colors"
+              >
+                Reader
+              </Link>
+              <Link
+                href="/"
+                className="text-sm font-medium text-palette-textLight hover:text-palette-blue transition-colors"
               >
                 Home
+              </Link>
+              <Link
+                href="/clubs"
+                className="text-sm font-medium text-palette-textLight hover:text-palette-blue transition-colors"
+              >
+                Book Clubs
               </Link>
               <Link
                 href="#"
@@ -130,14 +142,26 @@ export default function HomePage() {
             <div className="container py-4">
               <nav className="flex flex-col space-y-4">
                 <Link
-                  href="#"
-                  className="flex items-center text-sm font-medium text-palette-textLight hover:text-palette-pink transition-colors"
+                  href="/books/reader"
+                  className="flex items-center text-sm font-medium text-palette-textLight hover:text-palette-blue transition-colors"
+                >
+                  Reader
+                </Link>
+                <Link
+                  href="/"
+                  className="flex items-center text-sm font-medium text-palette-textLight hover:text-palette-blue transition-colors"
                 >
                   Home
                 </Link>
                 <Link
+                  href="/clubs"
+                  className="flex items-center text-sm font-medium text-palette-textLight hover:text-palette-blue transition-colors"
+                >
+                  Book Clubs
+                </Link>
+                <Link
                   href="#"
-                  className="flex items-center text-sm font-medium text-palette-textLight hover:text-palette-orange transition-colors"
+                  className="flex items-center text-sm font-medium text-palette-textLight hover:text-palette-pink transition-colors"
                 >
                   Discover
                 </Link>
