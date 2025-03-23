@@ -13,6 +13,7 @@ interface AuthContextType {
   profileLoading: boolean;
   signOut: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
   profileLoading: false,
   signOut: async () => {},
   signIn: async () => ({ error: null }),
+  refreshProfile: async () => {},
 });
 
 // Flag to prevent multiple redirects
@@ -352,8 +354,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Insert refreshProfile function in the AuthProvider component
+  async function refreshProfile() {
+    if (!user) return;
+    
+    try {
+      setProfileLoading(true);
+      await getProfile(user.id, false);
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    } finally {
+      setProfileLoading(false);
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, profileLoading, signOut, signIn }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        loading,
+        profileLoading,
+        signOut,
+        signIn,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
