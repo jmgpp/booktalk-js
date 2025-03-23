@@ -13,7 +13,6 @@ import { RecentBooks } from '@/components/recent-books'
 import { supabase } from '@/lib/supabase'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getUserReadingStats, getUserRecentBooks, type ReadingStats, type RecentBook } from '@/lib/reading-stats'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function ProfilePage() {
   const { user, profile, loading, profileLoading, refreshProfile } = useAuth()
@@ -261,294 +260,290 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="mb-8 bg-palette-darkPurple/50">
-                  <TabsTrigger value="profile">Profile Info</TabsTrigger>
-                  <TabsTrigger value="stats">Reading Stats</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="profile">
-                  {isEditing ? (
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <label htmlFor="full_name" className="flex items-center gap-2 text-sm font-medium mb-2">
-                              <User className="h-4 w-4" /> Full Name
-                            </label>
-                            <Input
-                              id="full_name"
-                              name="full_name"
-                              value={formData.full_name}
-                              onChange={handleInputChange}
-                              className="bg-palette-darkPurple/70 text-white border-palette-purple border-opacity-50"
-                              placeholder="Enter your full name"
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="username" className="flex items-center gap-2 text-sm font-medium mb-2">
-                              <AtSign className="h-4 w-4" /> Username
-                            </label>
-                            <Input
-                              id="username"
-                              name="username"
-                              value={formData.username}
-                              onChange={handleInputChange}
-                              className="bg-palette-darkPurple/70 text-white border-palette-purple border-opacity-50"
-                              placeholder="Enter your username"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="email" className="flex items-center gap-2 text-sm font-medium mb-2">
-                            <Mail className="h-4 w-4" /> Email Address
-                          </label>
-                          <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            disabled
-                            className="bg-palette-darkPurple/70 text-white border-palette-purple border-opacity-50 opacity-70"
-                          />
-                          <p className="text-xs mt-1 text-palette-textLight/70">
-                            Your email cannot be changed.
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="bio" className="flex items-center gap-2 text-sm font-medium mb-2">
-                            <FileText className="h-4 w-4" /> Bio
-                          </label>
-                          <textarea
-                            id="bio"
-                            name="bio"
-                            value={formData.bio ?? ''}
-                            onChange={handleInputChange}
-                            className="w-full bg-palette-darkPurple/70 text-white border border-palette-purple border-opacity-50 rounded-md p-2.5 h-24 resize-none"
-                            placeholder="Tell others about yourself..."
-                          />
+              {isEditing ? (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label htmlFor="full_name" className="flex items-center gap-2 text-sm font-medium mb-2">
+                          <User className="h-4 w-4" /> Full Name
+                        </label>
+                        <Input
+                          id="full_name"
+                          name="full_name"
+                          value={formData.full_name}
+                          onChange={handleInputChange}
+                          className="bg-palette-darkPurple/70 text-white border-palette-purple border-opacity-50"
+                          placeholder="Enter your full name"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="username" className="flex items-center gap-2 text-sm font-medium mb-2">
+                          <AtSign className="h-4 w-4" /> Username
+                        </label>
+                        <Input
+                          id="username"
+                          name="username"
+                          value={formData.username}
+                          onChange={handleInputChange}
+                          className="bg-palette-darkPurple/70 text-white border-palette-purple border-opacity-50"
+                          placeholder="Enter your username"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="email" className="flex items-center gap-2 text-sm font-medium mb-2">
+                        <Mail className="h-4 w-4" /> Email Address
+                      </label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        disabled
+                        className="bg-palette-darkPurple/70 text-white border-palette-purple border-opacity-50 opacity-70"
+                      />
+                      <p className="text-xs mt-1 text-palette-textLight/70">
+                        Your email cannot be changed.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="bio" className="flex items-center gap-2 text-sm font-medium mb-2">
+                        <FileText className="h-4 w-4" /> Bio
+                      </label>
+                      <textarea
+                        id="bio"
+                        name="bio"
+                        value={formData.bio ?? ''}
+                        onChange={handleInputChange}
+                        className="w-full bg-palette-darkPurple/70 text-white border border-palette-purple border-opacity-50 rounded-md p-2.5 h-24 resize-none"
+                        placeholder="Tell others about yourself..."
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-4">
+                    <Button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="bg-palette-purple/50 hover:bg-palette-purple/70"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit"
+                      className="bg-palette-pink hover:bg-palette-pink/90"
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>Save Changes</>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="space-y-6 mb-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div>
+                        <h3 className="text-lg font-medium mb-2">About</h3>
+                        <div className="bg-palette-darkPurple/30 p-4 rounded-lg">
+                          {formData.bio ? (
+                            <p className="text-palette-textLight/90">{formData.bio}</p>
+                          ) : (
+                            <p className="text-palette-textLight/50 italic">No bio added yet.</p>
+                          )}
                         </div>
                       </div>
                       
-                      <div className="flex justify-end space-x-4">
-                        <Button
-                          type="button"
-                          onClick={() => setIsEditing(false)}
-                          className="bg-palette-purple/50 hover:bg-palette-purple/70"
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          type="submit"
-                          className="bg-palette-pink hover:bg-palette-pink/90"
-                          disabled={isSaving}
-                        >
-                          {isSaving ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Saving...
-                            </>
-                          ) : (
-                            <>Save Changes</>
-                          )}
-                        </Button>
+                      <div>
+                        <h3 className="text-lg font-medium mb-2">Contact</h3>
+                        <div className="bg-palette-darkPurple/30 p-4 rounded-lg space-y-3">
+                          <div className="flex items-start gap-3">
+                            <Mail className="h-5 w-5 text-palette-pink mt-0.5" />
+                            <div>
+                              <p className="text-sm text-palette-textLight/70">Email</p>
+                              <p>{formData.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <User className="h-5 w-5 text-palette-pink mt-0.5" />
+                            <div>
+                              <p className="text-sm text-palette-textLight/70">Full Name</p>
+                              <p>{formData.full_name || 'Not provided'}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <AtSign className="h-5 w-5 text-palette-pink mt-0.5" />
+                            <div>
+                              <p className="text-sm text-palette-textLight/70">Username</p>
+                              <p>{formData.username}</p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </form>
-                  ) : (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    </div>
+                  </div>
+                  
+                  {/* Reading Stats Section */}
+                  <div className="pt-6 border-t border-palette-purple/20">
+                    <h2 className="text-2xl font-bold mb-6">Reading Statistics</h2>
+                    
+                    {statsLoading ? (
+                      <div className="animate-pulse space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="h-32 bg-palette-purple/30 rounded-xl"></div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="h-48 bg-palette-purple/30 rounded-xl"></div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-8">
+                        {/* Books statistics */}
                         <div>
-                          <h3 className="text-lg font-medium mb-2">About</h3>
-                          <div className="bg-palette-darkPurple/30 p-4 rounded-lg">
-                            {formData.bio ? (
-                              <p className="text-palette-textLight/90">{formData.bio}</p>
+                          <h3 className="text-xl font-medium mb-4">Reading Overview</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <StatsCard 
+                              icon={<BookOpen className="h-5 w-5" />}
+                              label="Total Books"
+                              value={readingStats?.totalBooks || 0}
+                              variant="pink"
+                            />
+                            <StatsCard 
+                              icon={<BookMarked className="h-5 w-5" />}
+                              label="Books Read"
+                              value={readingStats?.booksRead || 0}
+                              variant="teal"
+                            />
+                            <StatsCard 
+                              icon={<BookOpen className="h-5 w-5" />}
+                              label="Currently Reading"
+                              value={readingStats?.booksReading || 0}
+                              variant="blue"
+                            />
+                            <StatsCard 
+                              icon={<Bookmark className="h-5 w-5" />}
+                              label="Want to Read"
+                              value={readingStats?.booksWantToRead || 0}
+                              variant="orange"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Reading progress and habits */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="bg-palette-darkPurple/20 rounded-xl p-6 flex flex-col items-center justify-center">
+                            <h3 className="text-lg font-medium mb-4 text-center">Overall Progress</h3>
+                            <ReadingProgress percentage={readingProgressPercentage} />
+                            <div className="mt-4 text-center">
+                              <p className="text-palette-textLight/70 text-sm">
+                                {readingStats?.pagesRead || 0} of {readingStats?.totalPages || 0} pages
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-palette-darkPurple/20 rounded-xl p-6">
+                            <h3 className="text-lg font-medium mb-4">Reading Habits</h3>
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-5 w-5 text-palette-yellow" />
+                                  <span>Avg. Days to Finish</span>
+                                </div>
+                                <span className="font-bold">
+                                  {readingStats?.readingHabits.averageDaysToFinish || 0} days
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-5 w-5 text-palette-blue" />
+                                  <span>Books Last Month</span>
+                                </div>
+                                <span className="font-bold">
+                                  {readingStats?.readingHabits.booksLastMonth || 0}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <BookText className="h-5 w-5 text-palette-pink" />
+                                  <span>Pages Last Month</span>
+                                </div>
+                                <span className="font-bold">
+                                  {readingStats?.readingHabits.pagesLastMonth || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-palette-darkPurple/20 rounded-xl p-6">
+                            <h3 className="text-lg font-medium mb-4">Library Composition</h3>
+                            {readingStats && readingStats.totalBooks > 0 ? (
+                              <div className="space-y-4">
+                                <div>
+                                  <p className="flex items-center justify-between mb-1">
+                                    <span className="text-palette-teal">Read</span>
+                                    <span>{Math.round((readingStats.booksRead / readingStats.totalBooks) * 100)}%</span>
+                                  </p>
+                                  <div className="w-full h-2 bg-palette-darkPurple rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-palette-teal rounded-full"
+                                      style={{ width: `${(readingStats.booksRead / readingStats.totalBooks) * 100}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="flex items-center justify-between mb-1">
+                                    <span className="text-palette-blue">Reading</span>
+                                    <span>{Math.round((readingStats.booksReading / readingStats.totalBooks) * 100)}%</span>
+                                  </p>
+                                  <div className="w-full h-2 bg-palette-darkPurple rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-palette-blue rounded-full"
+                                      style={{ width: `${(readingStats.booksReading / readingStats.totalBooks) * 100}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="flex items-center justify-between mb-1">
+                                    <span className="text-palette-orange">Want to Read</span>
+                                    <span>{Math.round((readingStats.booksWantToRead / readingStats.totalBooks) * 100)}%</span>
+                                  </p>
+                                  <div className="w-full h-2 bg-palette-darkPurple rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-palette-orange rounded-full"
+                                      style={{ width: `${(readingStats.booksWantToRead / readingStats.totalBooks) * 100}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              </div>
                             ) : (
-                              <p className="text-palette-textLight/50 italic">No bio added yet.</p>
+                              <p className="text-palette-textLight/70 text-center">No books in your library yet.</p>
                             )}
                           </div>
                         </div>
                         
+                        {/* Recent books */}
                         <div>
-                          <h3 className="text-lg font-medium mb-2">Contact</h3>
-                          <div className="bg-palette-darkPurple/30 p-4 rounded-lg space-y-3">
-                            <div className="flex items-start gap-3">
-                              <Mail className="h-5 w-5 text-palette-pink mt-0.5" />
-                              <div>
-                                <p className="text-sm text-palette-textLight/70">Email</p>
-                                <p>{formData.email}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                              <User className="h-5 w-5 text-palette-pink mt-0.5" />
-                              <div>
-                                <p className="text-sm text-palette-textLight/70">Full Name</p>
-                                <p>{formData.full_name || 'Not provided'}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                              <AtSign className="h-5 w-5 text-palette-pink mt-0.5" />
-                              <div>
-                                <p className="text-sm text-palette-textLight/70">Username</p>
-                                <p>{formData.username}</p>
-                              </div>
-                            </div>
-                          </div>
+                          <h3 className="text-xl font-medium mb-4">Recent Books</h3>
+                          <RecentBooks books={recentBooks} loading={booksLoading} />
                         </div>
                       </div>
-                    </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="stats">
-                  {statsLoading ? (
-                    <div className="animate-pulse space-y-8">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {[1, 2, 3, 4].map((i) => (
-                          <div key={i} className="h-32 bg-palette-purple/30 rounded-xl"></div>
-                        ))}
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="h-48 bg-palette-purple/30 rounded-xl"></div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-8">
-                      {/* Books statistics */}
-                      <div>
-                        <h3 className="text-xl font-medium mb-4">Reading Overview</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <StatsCard 
-                            icon={<BookOpen className="h-5 w-5" />}
-                            label="Total Books"
-                            value={readingStats?.totalBooks || 0}
-                            variant="pink"
-                          />
-                          <StatsCard 
-                            icon={<BookMarked className="h-5 w-5" />}
-                            label="Books Read"
-                            value={readingStats?.booksRead || 0}
-                            variant="teal"
-                          />
-                          <StatsCard 
-                            icon={<BookOpen className="h-5 w-5" />}
-                            label="Currently Reading"
-                            value={readingStats?.booksReading || 0}
-                            variant="blue"
-                          />
-                          <StatsCard 
-                            icon={<Bookmark className="h-5 w-5" />}
-                            label="Want to Read"
-                            value={readingStats?.booksWantToRead || 0}
-                            variant="orange"
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* Reading progress and habits */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-palette-darkPurple/20 rounded-xl p-6 flex flex-col items-center justify-center">
-                          <h3 className="text-lg font-medium mb-4 text-center">Overall Progress</h3>
-                          <ReadingProgress percentage={readingProgressPercentage} />
-                          <div className="mt-4 text-center">
-                            <p className="text-palette-textLight/70 text-sm">
-                              {readingStats?.pagesRead || 0} of {readingStats?.totalPages || 0} pages
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-palette-darkPurple/20 rounded-xl p-6">
-                          <h3 className="text-lg font-medium mb-4">Reading Habits</h3>
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-5 w-5 text-palette-yellow" />
-                                <span>Avg. Days to Finish</span>
-                              </div>
-                              <span className="font-bold">
-                                {readingStats?.readingHabits.averageDaysToFinish || 0} days
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Calendar className="h-5 w-5 text-palette-blue" />
-                                <span>Books Last Month</span>
-                              </div>
-                              <span className="font-bold">
-                                {readingStats?.readingHabits.booksLastMonth || 0}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <BookText className="h-5 w-5 text-palette-pink" />
-                                <span>Pages Last Month</span>
-                              </div>
-                              <span className="font-bold">
-                                {readingStats?.readingHabits.pagesLastMonth || 0}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-palette-darkPurple/20 rounded-xl p-6">
-                          <h3 className="text-lg font-medium mb-4">Library Composition</h3>
-                          {readingStats && readingStats.totalBooks > 0 ? (
-                            <div className="space-y-4">
-                              <div>
-                                <p className="flex items-center justify-between mb-1">
-                                  <span className="text-palette-teal">Read</span>
-                                  <span>{Math.round((readingStats.booksRead / readingStats.totalBooks) * 100)}%</span>
-                                </p>
-                                <div className="w-full h-2 bg-palette-darkPurple rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-palette-teal rounded-full"
-                                    style={{ width: `${(readingStats.booksRead / readingStats.totalBooks) * 100}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-                              <div>
-                                <p className="flex items-center justify-between mb-1">
-                                  <span className="text-palette-blue">Reading</span>
-                                  <span>{Math.round((readingStats.booksReading / readingStats.totalBooks) * 100)}%</span>
-                                </p>
-                                <div className="w-full h-2 bg-palette-darkPurple rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-palette-blue rounded-full"
-                                    style={{ width: `${(readingStats.booksReading / readingStats.totalBooks) * 100}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-                              <div>
-                                <p className="flex items-center justify-between mb-1">
-                                  <span className="text-palette-orange">Want to Read</span>
-                                  <span>{Math.round((readingStats.booksWantToRead / readingStats.totalBooks) * 100)}%</span>
-                                </p>
-                                <div className="w-full h-2 bg-palette-darkPurple rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-palette-orange rounded-full"
-                                    style={{ width: `${(readingStats.booksWantToRead / readingStats.totalBooks) * 100}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-palette-textLight/70 text-center">No books in your library yet.</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Recent books */}
-                      <div>
-                        <h3 className="text-xl font-medium mb-4">Recent Books</h3>
-                        <RecentBooks books={recentBooks} loading={booksLoading} />
-                      </div>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

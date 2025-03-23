@@ -104,7 +104,7 @@ export default function HomePage() {
                 <Bell className="h-5 w-5" />
               </Button>
               <Avatar className="border-2 border-palette-pink">
-                <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
+                <AvatarImage src={profile?.avatar_url || `/api/avatar?name=${encodeURIComponent(profile?.username || user?.email?.substring(0, 2) || "U")}`} alt="User" />
                 <AvatarFallback className="bg-palette-purple text-white">
                   {profile?.username?.substring(0, 2) || user?.email?.substring(0, 2) || "U"}
                 </AvatarFallback>
@@ -199,7 +199,7 @@ export default function HomePage() {
             <CardHeader className="bg-gradient-to-r from-palette-darkPurple to-palette-purple pb-8 pt-6">
               <div className="flex justify-center mb-3">
                 <Avatar className="h-20 w-20 border-4 border-palette-pink shadow-xl">
-                  <AvatarImage src="/placeholder.svg?height=80&width=80" alt="User" />
+                  <AvatarImage src={profile?.avatar_url || `/api/avatar?name=${encodeURIComponent(profile?.username || user?.email?.substring(0, 2) || "U")}`} alt="User" />
                   <AvatarFallback className="text-2xl bg-palette-purple text-white">
                     {profile?.username?.substring(0, 2) || user?.email?.substring(0, 2) || "U"}
                   </AvatarFallback>

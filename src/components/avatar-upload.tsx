@@ -35,7 +35,7 @@ export function AvatarUpload({ userId, currentAvatarUrl, onAvatarUpdated, onErro
       
       const file = event.target.files[0]
       const fileExt = file.name.split('.').pop()
-      const filePath = `${userId}-${uuidv4()}.${fileExt}`
+      const fileName = `${userId}-${uuidv4()}.${fileExt}`
       
       // Check if file is an image and not too large
       if (!file.type.match(/image\/(jpeg|png|jpg|gif)/)) {
@@ -46,21 +46,25 @@ export function AvatarUpload({ userId, currentAvatarUrl, onAvatarUpdated, onErro
         throw new Error('Image size must be less than 2MB.')
       }
       
-      // Upload the file to Supabase storage
+      // Upload the file to Supabase storage (assuming 'avatars' bucket already exists)
       const { error: uploadError } = await supabase
         .storage
         .from('avatars')
-        .upload(filePath, file)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
         
       if (uploadError) {
-        throw uploadError
+        console.error('Error uploading avatar:', uploadError)
+        throw new Error(`Error uploading image: ${uploadError.message}`)
       }
       
       // Get the public URL
       const { data: publicUrlData } = supabase
         .storage
         .from('avatars')
-        .getPublicUrl(filePath)
+        .getPublicUrl(fileName)
         
       const newAvatarUrl = publicUrlData.publicUrl
       
@@ -71,18 +75,23 @@ export function AvatarUpload({ userId, currentAvatarUrl, onAvatarUpdated, onErro
         .eq('id', userId)
         
       if (updateError) {
-        throw updateError
+        console.error('Error updating profile with avatar URL:', updateError)
+        throw new Error(`Error saving profile: ${updateError.message}`)
       }
       
-      // Delete the old avatar if it exists
-      if (avatarUrl) {
+      // Try to delete the old avatar if it exists
+      if (avatarUrl && avatarUrl.includes('avatars')) {
         try {
-          const oldPath = avatarUrl.split('/').pop()
-          if (oldPath && oldPath.startsWith(userId)) {
-            await supabase
+          const oldFileName = avatarUrl.split('/').pop()
+          if (oldFileName && oldFileName.startsWith(userId)) {
+            const { error: deleteError } = await supabase
               .storage
               .from('avatars')
-              .remove([oldPath])
+              .remove([oldFileName])
+              
+            if (deleteError) {
+              console.error('Error deleting old avatar:', deleteError)
+            }
           }
         } catch (error) {
           // Silently fail if we can't delete the old avatar
@@ -104,6 +113,9 @@ export function AvatarUpload({ userId, currentAvatarUrl, onAvatarUpdated, onErro
     }
   }
   
+  // Generate default avatar for display when no custom avatar is available
+  const defaultAvatarUrl = `https://ui-avatars.com/api/?name=${userId.substring(0, 2)}&background=random&color=fff&size=256`
+  
   return (
     <div className="relative group">
       <div className="h-32 w-32 rounded-full overflow-hidden bg-palette-darkPurple border-4 border-palette-purple/30 relative">
@@ -116,9 +128,13 @@ export function AvatarUpload({ userId, currentAvatarUrl, onAvatarUpdated, onErro
             className="rounded-full object-cover"
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center bg-palette-purple/20">
-            <User className="h-16 w-16 text-palette-textLight/50" />
-          </div>
+          <Image
+            src={defaultAvatarUrl}
+            alt="Default Avatar"
+            width={128}
+            height={128}
+            className="rounded-full object-cover"
+          />
         )}
         
         {uploading && (
