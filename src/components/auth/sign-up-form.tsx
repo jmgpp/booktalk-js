@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/lib/supabase';
 
 export function SignUpForm() {
@@ -10,9 +12,8 @@ export function SignUpForm() {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   async function checkUsernameAvailability(username: string): Promise<boolean> {
     try {
@@ -42,9 +43,8 @@ export function SignUpForm() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+    setError('');
     setSuccess(false);
-    setDebugInfo(null);
 
     try {
       // Basic validation
@@ -66,6 +66,8 @@ export function SignUpForm() {
         throw new Error('Username is already taken');
       }
 
+      console.log(`Attempting to sign up with email: ${email}`);
+
       // Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -79,8 +81,7 @@ export function SignUpForm() {
       });
 
       if (error) {
-        console.error('Supabase auth error:', error);
-        setDebugInfo(`Error code: ${error.status || 'unknown'}. ${error.message}`);
+        console.error('Sign-up error:', error);
         throw error;
       }
 
@@ -103,14 +104,16 @@ export function SignUpForm() {
   if (success) {
     return (
       <div className="space-y-4">
-        <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
-          <p className="font-medium">Success! Please check your email</p>
-          <p className="mt-2">
-            We've sent a confirmation link to <strong>{email}</strong>. Click the link in the
-            email to verify your account and complete the sign-up process.
-          </p>
-        </div>
-        <p className="text-sm text-gray-500">
+        <Alert variant="success" className="mb-4">
+          <AlertDescription>
+            <p className="font-medium">Success! Please check your email</p>
+            <p className="mt-2">
+              We've sent a confirmation link to <strong>{email}</strong>. Click the link in the
+              email to verify your account and complete the sign-up process.
+            </p>
+          </AlertDescription>
+        </Alert>
+        <p className="text-sm text-muted-foreground">
           Don't see the email? Check your spam folder or try signing up again.
         </p>
       </div>
@@ -118,74 +121,70 @@ export function SignUpForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       {error && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">
-          {error}
-        </div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
-      {debugInfo && (
-        <div className="rounded-md bg-yellow-50 p-4 text-sm text-yellow-800">
-          <p><strong>Debug info:</strong> {debugInfo}</p>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-white">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="your@email.com"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+            className="w-full"
+          />
         </div>
-      )}
-      <div className="space-y-1">
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-gray-700"
+        
+        <div className="space-y-2">
+          <Label htmlFor="username" className="text-white">Username</Label>
+          <Input
+            id="username"
+            name="username"
+            type="text"
+            placeholder="Choose a username"
+            required
+            value={username}
+            onChange={(e) => setUsername(e.target.value.trim())}
+            disabled={loading}
+            className="w-full"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-white">Password</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Create a password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+            className="w-full"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Must be at least 6 characters long
+          </p>
+        </div>
+        
+        <Button 
+          type="submit" 
+          disabled={loading} 
+          className="w-full"
         >
-          Email
-        </label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          placeholder="Enter your email"
-          error={!!error}
-        />
-      </div>
-      <div className="space-y-1">
-        <label
-          htmlFor="username"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Username
-        </label>
-        <Input
-          id="username"
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value.trim())}
-          required
-          placeholder="Choose a username"
-          error={!!error}
-        />
-      </div>
-      <div className="space-y-1">
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Password
-        </label>
-        <Input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          placeholder="Create a password"
-          error={!!error}
-        />
-        <p className="mt-1 text-xs text-gray-500">
-          Must be at least 6 characters long
-        </p>
-      </div>
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? 'Signing up...' : 'Sign up'}
-      </Button>
-    </form>
+          {loading ? "Creating Account..." : "Create Account"}
+        </Button>
+      </form>
+    </div>
   );
 } 

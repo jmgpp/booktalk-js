@@ -10,6 +10,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Check for signout in URL parameters
+  const url = new URL(request.url);
+  const isSigningOut = url.searchParams.has('signout') || 
+                       request.headers.get('x-supabase-sign-out') === 'true';
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -48,25 +53,44 @@ export async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
     
     // Log the path and session for debugging only
-    console.log(`MIDDLEWARE: Path: ${path}, Session exists: ${!!session}`);
+    console.log(`MIDDLEWARE: Path: ${path}, Session exists: ${!!session}, SigningOut: ${isSigningOut}`);
 
-    // Disable server-side redirects - let client handle them
-    /*
-    // If user is not signed in and the current path is not /auth,
-    // redirect the user to /auth
-    if (!session && !path.startsWith('/auth')) {
-      console.log('MIDDLEWARE: Redirecting unauthenticated user to /auth');
-      return NextResponse.redirect(new URL('/auth', request.url));
+    // Check if this is a sign out operation
+    if (isSigningOut || path === '/api/auth/signout') {
+      console.log('MIDDLEWARE: Sign out operation detected - clearing all auth cookies');
+      
+      // Clear all known Supabase auth cookies
+      const cookiesToClear = [
+        'sb-access-token',
+        'sb-refresh-token',
+        'supabase-auth-token',
+        '__supabase_auth_token',
+        'sb-auth-token',
+        'sb-provider-token'
+      ];
+      
+      cookiesToClear.forEach(cookieName => {
+        response.cookies.set({
+          name: cookieName,
+          value: '',
+          maxAge: 0,
+          path: '/',
+        });
+      });
+      
+      // Add extra header to help client-side code identify a signout
+      response.headers.set('x-supabase-signout-complete', 'true');
+      
+      // If we have an explicit signout operation and we're not already on the auth page,
+      // redirect to auth page with signout parameter
+      if ((isSigningOut || path === '/api/auth/signout') && 
+          !path.startsWith('/auth') && 
+          !url.searchParams.has('signout')) {
+        console.log('MIDDLEWARE: Redirecting to auth page with signout parameter');
+        return NextResponse.redirect(new URL(`/auth?signout=${Date.now()}`, request.url));
+      }
     }
 
-    // If user is signed in and the current path is /auth,
-    // redirect the user to /
-    if (session && path.startsWith('/auth')) {
-      console.log('MIDDLEWARE: Redirecting authenticated user to /');
-      return NextResponse.redirect(new URL('/', request.url));
-    }
-    */
-    
     return response;
   } catch (error) {
     console.error('MIDDLEWARE ERROR:', error);

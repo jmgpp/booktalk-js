@@ -4,17 +4,24 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import type { Profile } from './database.types';
+import { forceSignOut } from '@/utils/auth-utils';
 
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  profileLoading: boolean;
+  signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  profileLoading: false,
+  signOut: async () => {},
+  signIn: async () => ({ error: null }),
 });
 
 // Flag to prevent multiple redirects
@@ -24,11 +31,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     console.log('AuthProvider initialized');
     let mounted = true;
+
+    // Safety timeout to ensure loading never gets stuck
+    const loadingTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.log('Safety timeout: forcing loading state to false after 2 seconds');
+        setLoading(false);
+      }
+    }, 2000);
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -38,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        getProfile(session.user.id);
+        getProfile(session.user.id, true);
       } else {
         setLoading(false);
         setInitialized(true);
@@ -56,28 +72,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!mounted) return;
       
+      // Handle sign out event specifically
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out, clearing auth state');
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+        setProfileLoading(false);
+        setInitialized(true);
+        
+        // Ensure we're not in a loop with redirects
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+          console.log('Redirecting to auth page after sign out');
+          // Use a consistent approach for navigation
+          window.location.href = '/auth?signout=true';
+        }
+        return;
+      }
+      
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // User is signed in - update the profile only
-        await getProfile(session.user.id);
+        if (event === 'SIGNED_IN') {
+          getProfile(session.user.id, false);
+        } else {
+          getProfile(session.user.id, false);
+        }
       } else {
-        // User is signed out
         setProfile(null);
         setLoading(false);
+        setProfileLoading(false);
         setInitialized(true);
       }
     });
 
     return () => {
       mounted = false;
+      clearTimeout(loadingTimeout);
       subscription.unsubscribe();
     };
   }, []);
 
-  async function getProfile(userId: string) {
+  async function getProfile(userId: string, isInitialLoad: boolean) {
     try {
-      // First check if the profile exists
+      if (!isInitialLoad) {
+        setProfileLoading(true);
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -86,60 +127,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // Profile not found, try to create one
           console.log('Profile not found, creating profile');
-          await createProfile(userId);
+          await createProfile(userId, isInitialLoad);
           return;
         }
         
         console.error('Error fetching profile:', error);
-        setLoading(false);
+        setProfile(null);
+        if (isInitialLoad) {
+          setLoading(false);
+        }
+        setProfileLoading(false);
         return;
       }
 
       console.log('Profile fetched successfully');
       setProfile(data);
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
+      setProfileLoading(false);
     } catch (err) {
       console.error('Unexpected error in getProfile:', err);
-      setLoading(false);
+      setProfile(null);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
+      setProfileLoading(false);
     }
   }
 
-  async function createProfile(userId: string) {
+  async function createProfile(userId: string, isInitialLoad: boolean = false) {
     try {
       console.log('Starting profile creation for user ID:', userId);
       
-      // Get user from auth
       const { data: userData, error: userError } = await supabase.auth.getUser();
       
       if (userError || !userData.user) {
         console.error('Error getting user:', userError);
-        setLoading(false);
+        if (isInitialLoad) {
+          setLoading(false);
+        }
+        setProfileLoading(false);
         return;
       }
       
       const { user } = userData;
       console.log('Got user data:', { id: user.id, email: user.email });
       
-      // Generate a username from email or metadata
       let username = '';
       if (user.user_metadata && user.user_metadata.username) {
         username = user.user_metadata.username;
       } else if (user.email) {
-        // Extract part before @ and clean it up
         username = user.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
       } else {
-        // Fallback to a random username
         username = `user_${Math.floor(Math.random() * 10000)}`;
       }
       
-      // Make sure username is not empty and meets minimum length
       if (!username || username.length < 3) {
         username = `user_${Math.floor(Math.random() * 10000)}`;
       }
       
-      // First, check what columns exist in the profiles table
       let hasEmailColumn = true;
       try {
         const { data: columns } = await supabase
@@ -150,7 +198,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
         console.log('Available columns:', columns);
         
-        // Check if email column exists
         if (columns) {
           hasEmailColumn = columns.some(col => col.column_name === 'email');
         }
@@ -158,20 +205,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error checking columns:', err);
       }
       
-      // Prepare the minimal required profile data
       const profileData: any = {
         id: userId,
         username: username,
       };
       
-      // Add email only if the column exists
       if (hasEmailColumn && user.email) {
         profileData.email = user.email;
       }
       
       console.log('Creating profile with data:', profileData);
       
-      // Try inserting profile
       const { data, error } = await supabase
         .from('profiles')
         .insert(profileData)
@@ -182,7 +226,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error creating profile:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
         
-        // If there was an error, try a direct fetch first to see if profile already exists
         const { data: existingProfile, error: fetchError } = await supabase
           .from('profiles')
           .select('*')
@@ -192,11 +235,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!fetchError && existingProfile) {
           console.log('Profile already exists:', existingProfile);
           setProfile(existingProfile);
-          setLoading(false);
+          if (isInitialLoad) {
+            setLoading(false);
+          }
+          setProfileLoading(false);
           return;
         }
         
-        // Try the server API as a last resort
         try {
           const response = await fetch('/api/create-profile', {
             method: 'POST',
@@ -217,7 +262,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (result.success && result.data) {
               setProfile(result.data);
-              setLoading(false);
+              if (isInitialLoad) {
+                setLoading(false);
+              }
+              setProfileLoading(false);
               return;
             }
           }
@@ -225,31 +273,87 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('Error with server API:', serverErr);
         }
         
-        setLoading(false);
+        if (isInitialLoad) {
+          setLoading(false);
+        }
+        setProfileLoading(false);
         return;
       }
       
-      console.log('Profile created successfully:', data);
-      setProfile(data);
-      setLoading(false);
+      const { data: newProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error fetching new profile:', fetchError);
+        if (isInitialLoad) {
+          setLoading(false);
+        }
+        setProfileLoading(false);
+        return;
+      }
+      
+      console.log('Profile created and fetched successfully');
+      setProfile(newProfile);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
+      setProfileLoading(false);
     } catch (err) {
       console.error('Unexpected error in createProfile:', err);
-      // Show the full error object for debugging
-      if (err instanceof Error) {
-        console.error('Error details:', {
-          name: err.name,
-          message: err.message,
-          stack: err.stack,
-        });
-      } else {
-        console.error('Non-Error object thrown:', err);
+      if (isInitialLoad) {
+        setLoading(false);
       }
-      setLoading(false);
+      setProfileLoading(false);
+    }
+  }
+
+  // Add a signOut function that can be used throughout the app
+  async function signOut() {
+    console.log('SignOut called from auth context');
+    try {
+      // Attempt normal signout first
+      const { error } = await supabase.auth.signOut();
+      if (error) console.error('Error in normal sign out:', error);
+      
+      // Force clear state immediately
+      setUser(null);
+      setProfile(null);
+      
+      // Use the forceful signout utility to ensure all auth data is cleared
+      await forceSignOut();
+    } catch (error) {
+      console.error('Error in auth context signOut:', error);
+      // Still try the force signout even if there was an error
+      await forceSignOut();
+    }
+  }
+
+  // Add a signIn function for use in sign-in form
+  async function signIn(email: string, password: string) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('SignIn error:', error);
+        return { error };
+      }
+
+      console.log('SignIn successful, user:', data.user?.id);
+      return { error: null };
+    } catch (error) {
+      console.error('Unexpected error in signIn:', error);
+      return { error: error instanceof Error ? error : new Error('Unknown error during sign in') };
     }
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading }}>
+    <AuthContext.Provider value={{ user, profile, loading, profileLoading, signOut, signIn }}>
       {children}
     </AuthContext.Provider>
   );

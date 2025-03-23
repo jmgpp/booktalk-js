@@ -22,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={nunitoSans.variable}>
-      <body suppressHydrationWarning={true}>
+      <body suppressHydrationWarning={true} className="bg-blue-100 text-black min-h-screen">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
