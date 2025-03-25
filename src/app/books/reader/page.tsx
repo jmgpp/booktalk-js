@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ReactReader } from 'react-reader';
 import Link from 'next/link';
-import { ArrowLeft, Menu, Minus, Plus, ChevronLeft, ChevronRight, BookOpen, Settings2, AlignLeft, AlignJustify } from 'lucide-react';
+import { ArrowLeft, Menu, Minus, Plus, ChevronLeft, ChevronRight, BookOpen, Settings2, AlignLeft, AlignJustify, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -336,11 +336,26 @@ export default function EpubReaderPage() {
 
   // Custom loading view component
   const loadingView = (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-card bg-opacity-90 z-10">
-      <Skeleton className="h-12 w-12 rounded-full bg-primary/20" />
-      <p className="text-muted-foreground mt-3 animate-pulse">Loading your book...</p>
+    <div className={`absolute inset-0 flex flex-col items-center justify-center z-10
+      ${theme === 'light' 
+        ? 'bg-white bg-opacity-90' 
+        : theme === 'dark' 
+        ? 'bg-[#121212] bg-opacity-90' 
+        : 'bg-[#f6f0e0] bg-opacity-90'}`}>
+      <Skeleton className={`h-12 w-12 rounded-full 
+        ${theme === 'light' 
+          ? 'bg-blue-500/20' 
+          : theme === 'dark' 
+          ? 'bg-blue-400/20' 
+          : 'bg-[#8a7048]/20'}`} />
+      <p className={`mt-3 animate-pulse
+        ${theme === 'light' 
+          ? 'text-gray-600' 
+          : theme === 'dark' 
+          ? 'text-gray-300' 
+          : 'text-[#5f4b32]'}`}>Loading your book...</p>
     </div>
-  );
+  ) as React.ReactElement;
 
   // TOC Panel
   const TocPanel = () => (
@@ -403,48 +418,48 @@ export default function EpubReaderPage() {
             theme === 'dark' ? 'text-gray-300' : 
             'text-[#5f4b32]'
           }`}>Theme</label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex justify-between gap-2">
             <Button
               onClick={() => changeTheme('light')}
               variant={theme === 'light' ? 'default' : 'outline'}
               size="sm"
-              className={`w-20 ${
-                theme === 'light' 
-                  ? ''
-                  : theme === 'dark'
-                  ? 'border-gray-700 hover:bg-gray-800 hover:text-gray-200 text-gray-300 focus:ring-offset-gray-900'
-                  : 'border-[#d8c9a3] hover:bg-[#ede4cb] text-[#5f4b32] focus:ring-offset-[#f6f0e0]'
+              className={`w-[31%] ${
+                theme !== 'light' && (
+                  theme === 'light' ? '' : 
+                  theme === 'dark' ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 
+                  'bg-[#f6f0e0] border-[#d8c9a3] text-[#5f4b32] hover:bg-[#ede4cb]'
+                )
               }`}
             >
-              Light
+              <Sun className="h-4 w-4 mr-1" /> Light
             </Button>
             <Button
               onClick={() => changeTheme('dark')}
               variant={theme === 'dark' ? 'default' : 'outline'}
               size="sm"
-              className={`w-20 ${
-                theme === 'light' 
-                  ? ''
-                  : theme === 'dark'
-                  ? 'border-gray-700 hover:bg-gray-800 hover:text-gray-200 text-gray-300 focus:ring-offset-gray-900'
-                  : 'border-[#d8c9a3] hover:bg-[#ede4cb] text-[#5f4b32] focus:ring-offset-[#f6f0e0]'
+              className={`w-[31%] ${
+                theme !== 'dark' && (
+                  theme === 'light' ? '' : 
+                  theme === 'dark' ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 
+                  'bg-[#f6f0e0] border-[#d8c9a3] text-[#5f4b32] hover:bg-[#ede4cb]'
+                )
               }`}
             >
-              Dark
+              <Moon className="h-4 w-4 mr-1" /> Dark
             </Button>
             <Button
               onClick={() => changeTheme('sepia')}
               variant={theme === 'sepia' ? 'default' : 'outline'}
               size="sm"
-              className={`w-20 ${
-                theme === 'light' 
-                  ? ''
-                  : theme === 'dark'
-                  ? 'border-gray-700 hover:bg-gray-800 hover:text-gray-200 text-gray-300 focus:ring-offset-gray-900'
-                  : 'border-[#d8c9a3] hover:bg-[#ede4cb] text-[#5f4b32] focus:ring-offset-[#f6f0e0]'
+              className={`w-[31%] ${
+                theme !== 'sepia' && (
+                  theme === 'light' ? '' : 
+                  theme === 'dark' ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 
+                  'bg-[#f6f0e0] border-[#d8c9a3] text-[#5f4b32] hover:bg-[#ede4cb]'
+                )
               }`}
             >
-              Sepia
+              <BookOpen className="h-4 w-4 mr-1" /> Sepia
             </Button>
           </div>
         </div>
@@ -665,13 +680,29 @@ export default function EpubReaderPage() {
       }`} ref={containerRef}>
         {/* Title Bar with improved contrast */}
         <div className={`relative z-50 h-12 flex items-center justify-between px-4 ${
-          theme === 'light' || theme === 'sepia' ? 'bg-[#3d3847] text-white' : 'bg-[rgb(61,56,71)] text-palette-textLight'
+          theme === 'light' 
+            ? 'bg-white text-gray-900 border-b border-gray-200' 
+            : theme === 'dark' 
+            ? 'bg-[#121212] text-gray-100 border-b border-gray-800' 
+            : 'bg-[#f6f0e0] text-[#5f4b32] border-b border-[#d8c9a3]'
         }`}>
           <Link href="/" className="flex items-center gap-2">
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className={`h-5 w-5 ${
+              theme === 'light' 
+                ? 'text-blue-500' 
+                : theme === 'dark' 
+                ? 'text-blue-400' 
+                : 'text-[#8a7048]'
+            }`} />
             <span className="font-medium truncate max-w-[200px] sm:max-w-xs">
               {bookTitle}
-              {chapter && <span className="text-sm font-normal opacity-70 ml-2 hidden md:inline truncate">— {chapter}</span>}
+              {chapter && <span className={`text-sm font-normal ml-2 hidden md:inline truncate ${
+                theme === 'light' 
+                  ? 'text-gray-600' 
+                  : theme === 'dark' 
+                  ? 'text-gray-400' 
+                  : 'text-[#8a7048]/80'
+              }`}>— {chapter}</span>}
             </span>
           </Link>
           
@@ -682,8 +713,12 @@ export default function EpubReaderPage() {
               size="icon"
               className={`h-8 w-8 ${
                 tocVisible 
-                  ? "bg-white/20" 
-                  : "text-white hover:bg-white/10"
+                  ? "" 
+                  : theme === 'light'
+                  ? "text-gray-700 hover:bg-gray-100"
+                  : theme === 'dark'
+                  ? "text-gray-300 hover:bg-gray-800"
+                  : "text-[#5f4b32] hover:bg-[#ede4cb]"
               } rounded`}
             >
               <BookOpen className="h-5 w-5" />
@@ -694,8 +729,12 @@ export default function EpubReaderPage() {
               size="icon"
               className={`h-8 w-8 ${
                 settingsVisible 
-                  ? "bg-white/20" 
-                  : "text-white hover:bg-white/10"
+                  ? "" 
+                  : theme === 'light'
+                  ? "text-gray-700 hover:bg-gray-100"
+                  : theme === 'dark'
+                  ? "text-gray-300 hover:bg-gray-800"
+                  : "text-[#5f4b32] hover:bg-[#ede4cb]"
               } rounded`}
             >
               <Settings2 className="h-5 w-5" />
@@ -783,12 +822,20 @@ export default function EpubReaderPage() {
                 variant="ghost" 
                 size="icon"
                 className={`h-12 w-12 rounded-r-full ml-2 ${
-                  theme === 'light' ? 'bg-gray-100/50 hover:bg-gray-200/50' :
-                  theme === 'dark' ? 'bg-gray-800/50 hover:bg-gray-700/50' :
-                  'bg-[#e6d9ba]/50 hover:bg-[#d8c9a3]/50'
+                  theme === 'light' 
+                    ? 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-700' 
+                    : theme === 'dark' 
+                    ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300' 
+                    : 'bg-[#e6d9ba]/50 hover:bg-[#d8c9a3]/50 text-[#5f4b32]'
                 }`}
               >
-                <ChevronLeft className="h-6 w-6" />
+                <ChevronLeft className={`h-6 w-6 ${
+                  theme === 'light' 
+                    ? 'text-blue-500' 
+                    : theme === 'dark' 
+                    ? 'text-blue-400' 
+                    : 'text-[#8a7048]'
+                }`} />
               </Button>
             </div>
             <div className="absolute right-0 top-0 h-full flex items-center">
@@ -797,12 +844,20 @@ export default function EpubReaderPage() {
                 variant="ghost" 
                 size="icon"
                 className={`h-12 w-12 rounded-l-full mr-2 ${
-                  theme === 'light' ? 'bg-gray-100/50 hover:bg-gray-200/50' :
-                  theme === 'dark' ? 'bg-gray-800/50 hover:bg-gray-700/50' :
-                  'bg-[#e6d9ba]/50 hover:bg-[#d8c9a3]/50'
+                  theme === 'light' 
+                    ? 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-700' 
+                    : theme === 'dark' 
+                    ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300' 
+                    : 'bg-[#e6d9ba]/50 hover:bg-[#d8c9a3]/50 text-[#5f4b32]'
                 }`}
               >
-                <ChevronRight className="h-6 w-6" />
+                <ChevronRight className={`h-6 w-6 ${
+                  theme === 'light' 
+                    ? 'text-blue-500' 
+                    : theme === 'dark' 
+                    ? 'text-blue-400' 
+                    : 'text-[#8a7048]'
+                }`} />
               </Button>
             </div>
           </div>
