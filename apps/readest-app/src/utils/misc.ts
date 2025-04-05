@@ -30,7 +30,12 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
   return safeName.trim();
 };
 
-export const getUserLang = () => navigator?.language.split('-')[0] || 'en';
+export const getUserLang = (): string => {
+  if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && navigator.language) {
+    return navigator.language.split('-')[0];
+  }
+  return 'en'; // Default language if navigator is not available (SSR)
+};
 
 export const isCJKEnv = () => ['zh', 'ja', 'ko'].includes(getUserLang());
 

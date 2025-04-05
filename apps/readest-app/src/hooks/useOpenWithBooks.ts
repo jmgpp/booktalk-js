@@ -30,29 +30,54 @@ export function useOpenWithBooks() {
   };
 
   useEffect(() => {
-    if (!isTauriAppPlatform()) return;
-    if (listenedOpenWithBooks.current) return;
+    if (!isTauriAppPlatform()) {
+      return; // Exit early if not in Tauri
+    }
+    if (listenedOpenWithBooks.current) {
+      return;
+    }
     listenedOpenWithBooks.current = true;
 
-    const unlistenDeeplink = getCurrentWindow().listen('single-instance', ({ event, payload }) => {
-      console.log('Received deep link:', event, payload);
-      const { args } = payload as SingleInstancePayload;
-      if (args?.[1]) {
-        handleOpenWithFileUrl(args[1]);
-      }
-    });
-    const listenOpenWithFiles = async () => {
-      return await onOpenUrl((urls) => {
+    let cleanupFunc: (() => void) | null = null;
+
+    const setupTauriListeners = async () => {
+      // Dynamic imports within the async function
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
+
+      const unlistenDeeplinkPromise = getCurrentWindow().listen('single-instance', ({ event, payload }) => {
+        console.log('Received deep link:', event, payload);
+        const { args } = payload as SingleInstancePayload;
+        if (args?.[1]) {
+          handleOpenWithFileUrl(args[1]);
+        }
+      });
+
+      const unlistenOpenUrlPromise = onOpenUrl((urls) => {
         urls.forEach((url) => {
           handleOpenWithFileUrl(url);
         });
       });
+
+      // Assign the combined cleanup logic
+      cleanupFunc = async () => {
+        const unlistenDeeplink = await unlistenDeeplinkPromise;
+        unlistenDeeplink();
+        const unlistenOpenUrl = await unlistenOpenUrlPromise;
+        if (unlistenOpenUrl) { // onOpenUrl might return null/undefined if already unlistened
+           unlistenOpenUrl();
+        }
+      };
     };
-    const unlistenOpenUrl = listenOpenWithFiles();
+
+    setupTauriListeners();
+
+    // Return a function that calls the cleanup logic when available
     return () => {
-      unlistenDeeplink.then((f) => f());
-      unlistenOpenUrl.then((f) => f());
+      if (cleanupFunc) {
+        cleanupFunc();
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Keep dependencies minimal, assuming handleOpenWithFileUrl is stable
 }

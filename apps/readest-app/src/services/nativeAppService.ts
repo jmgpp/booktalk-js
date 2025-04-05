@@ -15,7 +15,6 @@ import {
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { open as openDialog, message } from '@tauri-apps/plugin-dialog';
 import { join, appDataDir } from '@tauri-apps/api/path';
-import { type as osType } from '@tauri-apps/plugin-os';
 
 import { Book } from '@/types/book';
 import { ToastType, FileSystem, BaseDir, AppPlatform } from '@/types/system';
@@ -32,8 +31,6 @@ declare global {
     IS_ROUNDED?: boolean;
   }
 }
-
-const OS_TYPE = osType();
 
 const resolvePath = (fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } => {
   switch (base) {
@@ -83,16 +80,7 @@ export const nativeFileSystem: FileSystem = {
       return await new NativeFile(fp, fname, base ? baseDir : null).open();
     } else {
       const prefix = this.getPrefix(base);
-      if (prefix && OS_TYPE !== 'android') {
-        // NOTE: RemoteFile currently performs about 2× faster than NativeFile
-        // due to an unresolved performance issue in Tauri (see tauri-apps/tauri#9190).
-        // Once the bug is resolved, we should switch back to using NativeFile.
-        // RemoteFile is not usable on Android due to unknown issues of range fetch with Android WebView.
-        const absolutePath = await join(prefix, path);
-        return await new RemoteFile(this.getURL(absolutePath), fname).open();
-      } else {
-        return await new NativeFile(fp, fname, base ? baseDir : null).open();
-      }
+      return await new NativeFile(fp, fname, base ? baseDir : null).open();
     }
   },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
@@ -192,18 +180,40 @@ export const nativeFileSystem: FileSystem = {
 export class NativeAppService extends BaseAppService {
   fs = nativeFileSystem;
   appPlatform = 'tauri' as AppPlatform;
-  isAppDataSandbox = ['android', 'ios'].includes(OS_TYPE);
-  isMobile = ['android', 'ios'].includes(OS_TYPE);
-  isAndroidApp = OS_TYPE === 'android';
-  isIOSApp = OS_TYPE === 'ios';
-  hasTrafficLight = OS_TYPE === 'macos';
-  hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  hasRoundedWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android') && !!window.IS_ROUNDED;
-  hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
-  hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
-  hasSysFontsList = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+
+  osType: string;
+  isAppDataSandbox: boolean;
+  isMobile: boolean;
+  isAndroidApp: boolean;
+  isIOSApp: boolean;
+  hasTrafficLight: boolean;
+  hasWindow: boolean;
+  hasWindowBar: boolean;
+  hasContextMenu: boolean;
+  hasRoundedWindow: boolean;
+  hasSafeAreaInset: boolean;
+  hasHaptics: boolean;
+  hasSysFontsList: boolean;
+
+  constructor() {
+    super();
+
+    const { type: osTypeSync } = require('@tauri-apps/plugin-os');
+    this.osType = osTypeSync();
+
+    this.isAppDataSandbox = ['android', 'ios'].includes(this.osType);
+    this.isMobile = ['android', 'ios'].includes(this.osType);
+    this.isAndroidApp = this.osType === 'android';
+    this.isIOSApp = this.osType === 'ios';
+    this.hasTrafficLight = this.osType === 'macos';
+    this.hasWindow = !(this.osType === 'ios' || this.osType === 'android');
+    this.hasWindowBar = !(this.osType === 'ios' || this.osType === 'android');
+    this.hasContextMenu = !(this.osType === 'ios' || this.osType === 'android');
+    this.hasRoundedWindow = !(this.osType === 'ios' || this.osType === 'android') && !!window.IS_ROUNDED;
+    this.hasSafeAreaInset = this.osType === 'ios' || this.osType === 'android';
+    this.hasHaptics = this.osType === 'ios' || this.osType === 'android';
+    this.hasSysFontsList = !(this.osType === 'ios' || this.osType === 'android');
+  }
 
   override resolvePath(fp: string, base: BaseDir): { baseDir: number; base: BaseDir; fp: string } {
     return resolvePath(fp, base);

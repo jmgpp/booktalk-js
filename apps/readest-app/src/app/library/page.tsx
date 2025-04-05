@@ -160,34 +160,52 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   useEffect(() => {
-    const libraryPage = document.querySelector('.library-page');
-    libraryPage?.addEventListener('dragover', handleDragOver as unknown as EventListener);
-    libraryPage?.addEventListener('dragleave', handleDragLeave as unknown as EventListener);
-    libraryPage?.addEventListener('drop', handleDrop as unknown as EventListener);
-
-    if (isTauriAppPlatform()) {
-      const unlisten = getCurrentWebview().onDragDropEvent((event) => {
-        if (event.payload.type === 'over') {
-          setIsDragging(true);
-        } else if (event.payload.type === 'drop') {
-          setIsDragging(false);
-          handleDropedFiles(event.payload.paths);
-        } else {
-          setIsDragging(false);
-        }
-      });
-      return () => {
-        unlisten.then((fn) => fn());
-      };
+    // Only run this effect in the Tauri environment
+    if (!isTauriAppPlatform()) {
+      return;
     }
 
+    // Dynamically import Tauri API only when needed
+    const setupDragDrop = async () => {
+      if (!isTauriAppPlatform()) return; // Re-check after async context
+
+      const { getCurrentWebview } = await import('@tauri-apps/api/webview');
+
+      const unlisten = getCurrentWebview().onDragDropEvent((event) => {
+        console.log('DragDrop event:', event);
+        switch (event.payload.type) {
+          case 'hover':
+            handleDragOver(event.payload.event);
+            break;
+          case 'drop':
+            handleDrop(event.payload.event);
+            break;
+          case 'cancel':
+            handleDragLeave(event.payload.event);
+            break;
+        }
+      });
+
+      // Return the cleanup function
+      return async () => {
+        const cleanup = await unlisten;
+        cleanup();
+      };
+    };
+
+    let cleanupPromise: Promise<() => void> | null = null;
+    setupDragDrop().then(cleanup => {
+      if (cleanup) {
+        cleanupPromise = Promise.resolve(cleanup); // Store cleanup for useEffect return
+      }
+    });
+
+    // Return function to call the cleanup function when component unmounts
     return () => {
-      libraryPage?.removeEventListener('dragover', handleDragOver as unknown as EventListener);
-      libraryPage?.removeEventListener('dragleave', handleDragLeave as unknown as EventListener);
-      libraryPage?.removeEventListener('drop', handleDrop as unknown as EventListener);
+      cleanupPromise?.then(cleanup => cleanup());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageRef.current]);
+  }, [pageRef.current]); // Dependencies might need adjustment based on handle* functions
 
   const processOpenWithFiles = React.useCallback(
     async (appService: AppService, openWithFiles: string[], libraryBooks: Book[]) => {
