@@ -2,8 +2,8 @@
 
 import clsx from 'clsx';
 import * as React from 'react';
-import { useState, useRef, useEffect, Suspense } from 'react';
-import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
+import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
+import { ReadonlyURLSearchParams, useRouter, useSearchParams, redirect } from 'next/navigation';
 
 import { Book } from '@/types/book';
 import { AppService } from '@/types/system';
@@ -159,6 +159,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   };
 
+  // --- Comment out Tauri Drag and Drop Effect --- 
+  /*
   useEffect(() => {
     // Only run this effect in the Tauri environment
     if (!isTauriAppPlatform()) {
@@ -175,13 +177,16 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         console.log('DragDrop event:', event);
         switch (event.payload.type) {
           case 'hover':
-            handleDragOver(event.payload.event);
+            // handleDragOver(event.payload.event); // Assuming handleDragOver exists
+            console.log('Drag Hover');
             break;
           case 'drop':
-            handleDrop(event.payload.event);
+            // handleDrop(event.payload.event); // Assuming handleDrop exists
+             console.log('Dropped files:', event.payload.paths);
             break;
           case 'cancel':
-            handleDragLeave(event.payload.event);
+            // handleDragLeave(event.payload.event); // Assuming handleDragLeave exists
+             console.log('Drag Cancel/Leave');
             break;
         }
       });
@@ -206,93 +211,87 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageRef.current]); // Dependencies might need adjustment based on handle* functions
+  */
 
-  const processOpenWithFiles = React.useCallback(
-    async (appService: AppService, openWithFiles: string[], libraryBooks: Book[]) => {
-      const settings = await appService.loadSettings();
-      const bookIds: string[] = [];
-      for (const file of openWithFiles) {
-        console.log('Open with book:', file);
-        try {
-          const temp = !settings.autoImportBooksOnOpen;
-          const book = await appService.importBook(file, libraryBooks, true, true, false, temp);
-          if (book) {
-            bookIds.push(book.hash);
-          }
-        } catch (error) {
-          console.log('Failed to import book:', file, error);
-        }
-      }
-      setLibrary(libraryBooks);
-      appService.saveLibraryBooks(libraryBooks);
-
-      console.log('Opening books:', bookIds);
-      if (bookIds.length > 0) {
-        setTimeout(() => {
-          navigateToReader(router, bookIds);
-        }, 0);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-
-  useEffect(() => {
-    if (isInitiating.current) return;
-    isInitiating.current = true;
-
-    const initLogin = async () => {
-      const appService = await envConfig.getAppService();
-      const settings = await appService.loadSettings();
-      if (token && user) {
-        if (!settings.keepLogin) {
-          settings.keepLogin = true;
-          setSettings(settings);
-          saveSettings(envConfig, settings);
-        }
-      } else if (settings.keepLogin) {
-        router.push('/auth');
-      }
-    };
-
-    const loadingTimeout = setTimeout(() => setLoading(true), 300);
-    const initLibrary = async () => {
-      const appService = await envConfig.getAppService();
-      const settings = await appService.loadSettings();
-      setSettings(settings);
-
-      const libraryBooks = await appService.loadLibraryBooks();
-      if (checkOpenWithBooks && isTauriAppPlatform()) {
-        await handleOpenWithBooks(appService, libraryBooks);
-      } else {
-        setCheckOpenWithBooks(false);
-        setLibrary(libraryBooks);
-      }
-
-      setLibraryLoaded(true);
-      if (loadingTimeout) clearTimeout(loadingTimeout);
-      setLoading(false);
-    };
-
-    const handleOpenWithBooks = async (appService: AppService, libraryBooks: Book[]) => {
+  const handleOpenWithBooks = useCallback(
+    async (appService: AppService | null, libraryBooks: Book[]) => {
+      if (!appService) return;
       const openWithFiles = (await parseOpenWithFiles()) || [];
-
       if (openWithFiles.length > 0) {
+        const processOpenWithFiles = async (appSvc: AppService, files: string[], books: Book[]) => {
+          const settings = await appSvc.loadSettings();
+          const bookIds: string[] = [];
+          for (const file of files) {
+            console.log('Open with book:', file);
+            try {
+              const temp = !settings.autoImportBooksOnOpen;
+              const book = await appSvc.importBook(file, books, true, true, false, temp);
+              if (book) {
+                bookIds.push(book.hash);
+              }
+            } catch (error) {
+              console.log('Failed to import book:', file, error);
+            }
+          }
+          setLibrary(books);
+          appSvc.saveLibraryBooks(books);
+          console.log('Opening books:', bookIds);
+          if (bookIds.length > 0) {
+            setTimeout(() => {
+              navigateToReader(router, bookIds);
+            }, 0);
+          }
+        };
+
         await processOpenWithFiles(appService, openWithFiles, libraryBooks);
       } else {
         setCheckOpenWithBooks(false);
         setLibrary(libraryBooks);
       }
-    };
+    },
+    [setCheckOpenWithBooks, setLibrary, router]
+  );
 
-    initLogin();
-    initLibrary();
+  useEffect(() => {
+    if (!user) {
+      console.log('LibraryPage: No user found, redirecting to /auth');
+      redirect('/auth');
+      return;
+    }
+
+    if (user && !isInitiating.current) {
+      console.log('LibraryPage: User found, initializing library...');
+      isInitiating.current = true;
+      const loadingTimeout = setTimeout(() => setLoading(true), 300);
+
+      const initLibrary = async () => {
+        const appService = await envConfig.getAppService();
+        if (!appService) return;
+
+        const settings = await appService.loadSettings();
+        setSettings(settings);
+
+        const libraryBooks = await appService.loadLibraryBooks();
+        if (checkOpenWithBooks && isTauriAppPlatform()) {
+          await handleOpenWithBooks(appService, libraryBooks);
+        } else {
+          setCheckOpenWithBooks(false);
+          setLibrary(libraryBooks);
+        }
+
+        setLibraryLoaded(true);
+        if (loadingTimeout) clearTimeout(loadingTimeout);
+        setLoading(false);
+      };
+
+      initLibrary();
+    }
+
     return () => {
       setCheckOpenWithBooks(false);
       isInitiating.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [user, searchParams, checkOpenWithBooks, envConfig, handleOpenWithBooks, setCheckOpenWithBooks, setLibrary, setSettings]);
 
   useEffect(() => {
     if (demoBooks.length > 0 && libraryLoaded) {

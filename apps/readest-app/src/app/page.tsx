@@ -1,7 +1,7 @@
-import { redirectToLibrary } from '@/utils/nav';
+import { redirect } from 'next/navigation';
 
 const HomePage = () => {
-  redirectToLibrary();
+  redirect('/auth');
 };
 
 export default HomePage;
