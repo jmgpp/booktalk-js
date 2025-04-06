@@ -6,9 +6,6 @@ import {
 import { eventDispatcher } from '@/utils/event';
 import { getOSPlatform } from '@/utils/misc';
 
-const doubleClickEnabled =
-  !DISABLE_DOUBLE_CLICK_ON_MOBILE || !['android', 'ios'].includes(getOSPlatform());
-
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -95,8 +92,15 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
 
 export const handleClick = (bookKey: string, event: MouseEvent) => {
   const now = Date.now();
+  
+  // Calculate doubleClickEnabled inside the handler (runs client-side)
+  const isMobilePlatform = () => {
+    const platform = getOSPlatform(); // Safe to call here
+    return platform === 'android' || platform === 'ios';
+  };
+  const doubleClickCheckEnabled = !DISABLE_DOUBLE_CLICK_ON_MOBILE || !isMobilePlatform();
 
-  if (doubleClickEnabled && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
+  if (doubleClickCheckEnabled && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
     lastClickTime = now;
     window.postMessage(
       {
@@ -152,7 +156,9 @@ export const handleClick = (bookKey: string, event: MouseEvent) => {
       '*',
     );
   };
-  if (doubleClickEnabled) {
+  
+  // Use the calculated value here
+  if (doubleClickCheckEnabled) {
     setTimeout(() => {
       if (Date.now() - lastClickTime >= DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
         postSingleClick();

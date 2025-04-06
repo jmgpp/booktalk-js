@@ -27,6 +27,7 @@ export interface Book {
 
   lastUpdated?: number; // deprecated in favor of updatedAt
   progress?: [number, number]; // Add progress field: [current, total], 1-based page number
+  isWebLoaded?: boolean; // Flag for books loaded via web file input
 }
 
 export interface BookGroupType {

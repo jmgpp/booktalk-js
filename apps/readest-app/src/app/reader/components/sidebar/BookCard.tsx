@@ -21,19 +21,30 @@ const BookCard = ({ book }: { book: Book }) => {
 
   return (
     <div className='flex h-20 w-full items-center'>
-      <Image
-        src={coverImageUrl!}
-        alt={_('Book Cover')}
-        width={56}
-        height={80}
-        className={clsx(
-          'me-4 aspect-auto max-h-16 w-[15%] max-w-12 rounded-sm object-cover shadow-md',
-          isDarkMode ? 'mix-blend-screen' : 'mix-blend-multiply',
-        )}
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = 'none';
-        }}
-      />
+      {coverImageUrl ? (
+        <Image
+          src={coverImageUrl}
+          alt={_('Book Cover')}
+          width={56}
+          height={80}
+          className={clsx(
+            'me-4 aspect-auto max-h-16 w-[15%] max-w-12 flex-shrink-0 rounded-sm object-cover shadow-md',
+            isDarkMode ? 'mix-blend-screen' : 'mix-blend-multiply',
+          )}
+          unoptimized
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      ) : (
+        <div 
+          className={clsx(
+            'me-4 flex h-16 w-[15%] max-w-12 flex-shrink-0 items-center justify-center rounded-sm bg-base-200 shadow-md'
+          )}
+        >
+          <span className="text-xs opacity-50">{formatTitle(title)?.[0] || 'B'}</span>
+        </div>
+      )}
       <div className='min-w-0 flex-1'>
         <h4 className='line-clamp-2 w-[90%] text-sm font-semibold'>{formatTitle(title)}</h4>
         <p className='truncate text-xs opacity-75'>{formatAuthors(author)}</p>

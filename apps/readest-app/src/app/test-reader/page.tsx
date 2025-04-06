@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { isTauriAppPlatform } from '@/services/environment';
 import { useLibraryStore } from '@/store/libraryStore';
 import { Book, BookFormat } from '@/types/book';
 import { getFilename } from '@/utils/book';
+import { webFileStore } from '../../store/webFileStore';
 
 // Helper to guess format (very basic)
 const getFormatFromPath = (path: string): BookFormat => {
@@ -26,10 +27,11 @@ export default function TestReaderPage() {
   const router = useRouter();
   const [message, setMessage] = useState<string>('');
   const { library, setLibrary } = useLibraryStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleLoadBook = async () => {
+  const handleLoadTauriBook = async () => {
     if (!isTauriAppPlatform()) {
-      setMessage('File selection only works in the Tauri desktop app.');
+      setMessage('Tauri file selection only works in the Tauri desktop app.');
       return;
     }
 
@@ -37,53 +39,98 @@ export default function TestReaderPage() {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const selectedPath = await open({
         multiple: false,
-        // filters: ... (optional)
+        filters: [
+          { name: 'Ebooks', extensions: ['epub', 'pdf'] },
+        ],
       });
 
       if (typeof selectedPath === 'string' && selectedPath) {
-        setMessage(`Selected: ${selectedPath}`);
-
-        // --- Create and add Book object --- 
+        setMessage(`Selected (Tauri): ${selectedPath}`);
         const now = Date.now();
         const fileName = getFilename(selectedPath);
-        // Simple hash based on path + timestamp for uniqueness in this test
         const bookHash = `local-${selectedPath}-${now}`;
 
         const newBook: Book = {
           filePath: selectedPath,
-          hash: bookHash, // Use generated hash as ID
+          hash: bookHash,
           format: getFormatFromPath(selectedPath),
-          title: fileName.replace(/\.[^/.]+$/, ""), // Remove extension for title
-          author: 'Unknown', // Placeholder author
+          title: fileName.replace(/\.[^/.]+$/, ""),
+          author: 'Unknown',
           createdAt: now,
           updatedAt: now,
-          // Other fields can be undefined/null initially
         };
 
-        // Add to library state
         const updatedLibrary = [...library, newBook];
         setLibrary(updatedLibrary);
-        console.log('Added temporary book to library state:', newBook);
-
-        // Navigate to reader using the book's hash
-        router.push(`/reader?ids=${bookHash}`); // Use 'ids' param as ReaderContent expects
+        console.log('Added temporary Tauri book to library state:', newBook);
+        router.push(`/reader?ids=${bookHash}`);
 
       } else {
-        setMessage('No file selected.');
+        setMessage('No file selected (Tauri).');
       }
     } catch (error) {
-      console.error('Error selecting file or creating book:', error);
-      setMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      console.error('Error selecting Tauri file or creating book:', error);
+      setMessage(`Error (Tauri): ${error instanceof Error ? error.message : String(error)}`);
     }
+  };
+
+  const handleTriggerWebFileSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleWebFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setMessage('No file selected (Web).');
+      return;
+    }
+
+    setMessage(`Selected (Web): ${file.name}`);
+
+    const now = Date.now();
+    const fileId = `webfile-${file.name}-${now}`;
+    
+    webFileStore.set(fileId, file);
+    console.log(`Stored web file with ID: ${fileId}`, file);
+
+    const newBook: Book = {
+      hash: fileId,
+      format: getFormatFromPath(file.name),
+      title: file.name.replace(/\.[^/.]+$/, ""),
+      author: 'Unknown',
+      createdAt: now,
+      updatedAt: now,
+      isWebLoaded: true,
+    };
+    
+    router.push(`/reader?ids=${fileId}`);
+
+    event.target.value = '';
   };
 
   return (
     <div style={{ padding: '2rem' }}>
-      <h1>Test Local Book Loader</h1>
-      <p>This page allows selecting a local ebook file, adding a temporary representation to the app state, and opening it in the reader using its generated ID.</p>
-      <button onClick={handleLoadBook} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
-        Load Local Ebook & Add to State
+      <h1>Test Book Loader</h1>
+      
+      <h2>Load from Tauri (Desktop App)</h2>
+      <p>Select a local ebook file using Tauri API (requires desktop app).</p>
+      <button onClick={handleLoadTauriBook} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
+        Load from Tauri
       </button>
+
+      <h2 style={{ marginTop: '2rem' }}>Load from Web Browser</h2>
+      <p>Select a local ebook file using the browser file input.</p>
+      <input 
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handleWebFileChange}
+        accept=".epub,.pdf"
+      />
+      <button onClick={handleTriggerWebFileSelect} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
+        Load from Web
+      </button>
+
       {message && <p style={{ marginTop: '1rem', color: 'gray' }}>{message}</p>}
     </div>
   );

@@ -2,23 +2,38 @@
 
 import clsx from 'clsx';
 import React from 'react';
+import dynamic from 'next/dynamic';
 
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import FoliateViewer from './FoliateViewer';
 import SectionInfo from './SectionInfo';
 import HeaderBar from './HeaderBar';
 import FooterBar from './FooterBar';
 import PageInfoView from './PageInfo';
 import Ribbon from './Ribbon';
 import SettingsDialog from './settings/SettingsDialog';
-import Annotator from './annotator/Annotator';
-import FootnotePopup from './FootnotePopup';
 import HintInfo from './HintInfo';
 import DoubleBorder from './DoubleBorder';
+import Spinner from '@/components/Spinner';
+
+// Dynamic imports
+const FoliateViewer = dynamic(() => import('./FoliateViewer'), {
+  ssr: false,
+  loading: () => <div className="flex h-full w-full items-center justify-center"><Spinner loading={true} /></div>
+});
+
+const Annotator = dynamic(() => import('./annotator/Annotator'), {
+  ssr: false,
+  // No specific loading state needed for Annotator usually
+});
+
+const FootnotePopup = dynamic(() => import('./FootnotePopup'), {
+  ssr: false,
+  // No specific loading state needed for FootnotePopup usually
+});
 
 interface BookGridItemProps {
   bookKey: string;
@@ -57,7 +72,7 @@ const BookGridItem: React.FC<BookGridItemProps> = ({
   if (!book || !config || !bookDoc || !viewSettings) { 
       console.warn(`[BookGridItem ${bookKey}] Missing required data. Rendering loading placeholder.`);
       // Keep rendering a placeholder div with the key to maintain grid structure
-      return <div key={bookKey} id={`gridcell-loading-${bookKey}`}>Loading {bookKey}...</div>; 
+      return <div key={bookKey} id={`gridcell-loading-${bookKey}`} className="flex h-full w-full items-center justify-center"><Spinner loading={true} /></div>; 
   }
 
   // Data is ready, proceed with rendering
