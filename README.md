@@ -21,6 +21,7 @@ This project is built upon the foundation of the excellent open-source ebook rea
 *   Basic fixes applied to run both web and desktop versions locally.
 *   Initial project plan and codebase analysis documents created.
 *   Implemented web file loading via browser API for testing/prototyping (using temporary in-memory store).
+*   Implemented profile page with Supabase data fetching, editing (name/username), and avatar upload/cropping/resizing.
 
 ## Documentation
 

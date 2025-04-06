@@ -78,10 +78,11 @@ The first functional version of BookTalk will focus on the core social reading g
     *   Get Readest running locally. (DONE - Requires `pnpm dev-web` for web, `pnpm tauri dev` for desktop)
     *   Initial browser/Tauri compatibility fixes applied. (DONE)
     *   **Analyze Readest codebase structure** (viewer, state, data flow). Document findings. (Initial analysis DONE - see READEST_ANALYSIS.md, further deep dive needed)
-    *   Set up Supabase project. Integrate Supabase client into the codebase. (TODO)
+    *   Set up Supabase project. Integrate Supabase client into the codebase. (DONE)
 *   **Phase 1: Authentication & Basic Structure**
-    *   Implement Supabase Authentication (Login/Signup flows).
-    *   Replace/hide Readest's initial views. Create basic BookTalk navigation (e.g., placeholder pages for Home, Groups, Friends).
+    *   Implement Supabase Authentication (Login/Signup flows). (DONE - Assuming from context)
+    *   Replace/hide Readest's initial views. Create basic BookTalk navigation (e.g., placeholder pages for Home, Groups, Friends). (DONE - Home page created, basic nav exists)
+    *   Implement basic Profile page UI, fetch/update profile data (name, username, avatar) from Supabase. (DONE - Includes avatar upload/cropping)
 *   **Phase 2: Core Group & Book Functionality**
     *   Implement Google Books API search functionality.
     *   Implement Group creation.
