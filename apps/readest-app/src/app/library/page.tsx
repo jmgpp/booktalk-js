@@ -548,6 +548,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         appService?.hasRoundedWindow && 'rounded-window',
       )}
     >
+      <div className='absolute left-4 top-16 z-20'>
+        <Link href="/home" className="btn btn-sm btn-ghost">
+          &lt; Back to Home
+        </Link>
+      </div>
       <div className='fixed top-0 z-40 w-full'>
         <LibraryHeader
           isSelectMode={isSelectMode}

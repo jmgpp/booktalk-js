@@ -110,7 +110,7 @@ export default function AuthPage() {
       if (session?.access_token && session.user) {
         login(session.access_token, session.user);
         const redirectTo = new URLSearchParams(window.location.search).get('redirect');
-        router.push(redirectTo ?? '/library');
+        router.push(redirectTo ?? '/home');
       }
     });
 

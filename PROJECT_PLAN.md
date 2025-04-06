@@ -48,7 +48,8 @@ The first functional version of BookTalk will focus on the core social reading g
     *   How data (like book content, user settings) flows into the viewer.
     *   Identify how to isolate the viewer from Readest's original auth, library, and other features we intend to replace.
 *   **Integration Approach:** Modify the copied Readest codebase. Replace non-viewer parts with BookTalk's custom components and logic. Integrate Supabase for data fetching, user state, and real-time communication. BookTalk components will need to interact with the retained Readest viewer component, likely passing book data and potentially configuration to it.
-*   **Ebook File Handling (Initial):** Ebooks will be linked from the user's **local filesystem** using Tauri's APIs. No cloud storage/sync in the MVP. The application will store the *path* to the local file.
+*   **Ebook File Handling (Initial):** Ebooks will initially be linked from the user's **local filesystem** using Tauri's APIs (desktop app). No cloud storage/sync in the MVP. The application will store the *path* to the local file. 
+    *   *(Update):* A mechanism for loading ebook files directly via the **web browser's File API** has also been implemented for testing and potential web-only scenarios. This uses a temporary in-memory store to pass the file content to the reader, bypassing the need for filesystem paths in a pure web context.
 *   **Real-time:**
     *   Chat: Use Supabase Realtime Broadcast or dedicated chat channels.
     *   Reading Progress: Users' clients will periodically send progress updates (e.g., percentage, location) for the group's book to Supabase. Other group members' clients will subscribe to updates for that group/book via Supabase Realtime Subscriptions.
@@ -94,6 +95,7 @@ The first functional version of BookTalk will focus on the core social reading g
     *   Integrate the isolated Readest viewer component into the Group view.
     *   Implement local file picking (using Tauri API) to link an ebook file to the `associated_book_id` within the group context.
     *   Pass the selected file path/content to the Readest viewer component.
+    *   *(Update):* Successfully implemented and tested loading ebook files via the **browser's File API** (primarily for testing/web scenarios), passing the file via an in-memory store. Resolved related SSR and rendering issues.
 *   **Phase 5: Real-time Features**
     *   Implement real-time chat within groups using Supabase Realtime.
     *   Implement sending reading progress updates from the client during reading.

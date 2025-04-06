@@ -7,6 +7,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { Book, BookFormat } from '@/types/book';
 import { getFilename } from '@/utils/book';
 import { webFileStore } from '../../store/webFileStore';
+import Link from 'next/link';
 
 // Helper to guess format (very basic)
 const getFormatFromPath = (path: string): BookFormat => {
@@ -110,9 +111,15 @@ export default function TestReaderPage() {
 
   return (
     <div style={{ padding: '2rem' }}>
-      <h1>Test Book Loader</h1>
+      <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}> 
+        <Link href="/home" className="btn btn-sm btn-ghost" style={{ textDecoration: 'none', color: 'inherit' }}>
+           &lt; Back to Home
+        </Link>
+      </div>
       
-      <h2>Load from Tauri (Desktop App)</h2>
+      <h1 style={{ textAlign: 'center' }}>Test Book Loader</h1>
+      
+      <h2 style={{ marginTop: '2rem' }}>Load from Tauri (Desktop App)</h2>
       <p>Select a local ebook file using Tauri API (requires desktop app).</p>
       <button onClick={handleLoadTauriBook} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
         Load from Tauri

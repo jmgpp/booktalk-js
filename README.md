@@ -20,6 +20,7 @@ This project is built upon the foundation of the excellent open-source ebook rea
 *   Initial setup complete: Readest codebase cloned.
 *   Basic fixes applied to run both web and desktop versions locally.
 *   Initial project plan and codebase analysis documents created.
+*   Implemented web file loading via browser API for testing/prototyping (using temporary in-memory store).
 
 ## Documentation
 
