@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 
-import { BookContent, BookConfig, PageInfo, BookProgress, ViewSettings } from '@/types/book';
+import { BookContent, BookConfig, PageInfo, BookProgress, ViewSettings, Book, BookNote } from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
 import { BookDoc, DocumentLoader, SectionItem, TOCItem } from '@/libs/document';
 import { updateTocCFI, updateTocID } from '@/utils/toc';
 import { useSettingsStore } from './settingsStore';
-import { useBookDataStore } from './bookDataStore';
+import { useBookDataStore, BookData, BookDataState } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
 
 interface ViewState {
@@ -53,6 +53,7 @@ interface ReaderStore {
     envConfig: EnvConfigType,
     id: string,
     key: string,
+    bookData: BookData,
     isPrimary?: boolean,
   ) => Promise<void>;
   clearViewState: (key: string) => void;
@@ -90,91 +91,81 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     });
   },
   getViewState: (key: string) => get().viewStates[key] || null,
-  initViewState: async (envConfig: EnvConfigType, id: string, key: string, isPrimary = true) => {
-    const booksData = useBookDataStore.getState().booksData;
-    const bookData = booksData[id];
+  initViewState: async (envConfig: EnvConfigType, id: string, key: string, bookData: BookData, isPrimary = true) => {
+    // Set initial loading state
     set((state) => ({
       viewStates: {
         ...state.viewStates,
-        [key]: {
-          key: '',
+        [key]: { 
+          key: key,
           view: null,
-          isPrimary: false,
+          isPrimary: isPrimary,
           loading: true,
           error: null,
           progress: null,
           ribbonVisible: false,
-          viewSettings: null,
+          viewSettings: null, 
         },
       },
     }));
+    
+    console.log(`[initViewState ${key}] Starting for ID: ${id}`);
+    let success = false;
+
     try {
-      if (!bookData) {
-        const appService = await envConfig.getAppService();
-        const { settings } = useSettingsStore.getState();
-        const { library } = useLibraryStore.getState();
-        const book = library.find((b) => b.hash === id);
-        if (!book) {
-          throw new Error('Book not found');
-        }
-        const content = (await appService.loadBookContent(book, settings)) as BookContent;
-        const { file, config } = content;
-        console.log('Loading book', key);
-        const { book: loadedBookDoc } = await new DocumentLoader(file).open();
-        const bookDoc = loadedBookDoc as BookDoc;
-        if (bookDoc.toc?.length && bookDoc.sections?.length) {
-          updateTocID(bookDoc.toc);
-          const sections = bookDoc.sections.reduce((map: Record<string, SectionItem>, section) => {
-            map[section.id] = section;
-            return map;
-          }, {});
-          updateTocCFI(bookDoc, bookDoc.toc, sections);
-        }
-        useBookDataStore.setState((state) => ({
-          booksData: {
-            ...state.booksData,
-            [id]: { id, book, file, config, bookDoc },
-          },
-        }));
+      // Use the directly passed bookData object
+      // const bookData = useBookDataStore.getState().getBookData(id); // Removed this line
+
+      // Check the passed bookData
+      if (!bookData || !bookData.config) { 
+          console.error(`[initViewState ${key}] !!! Passed BookData or its config is missing for ID: ${id}.`);
+          throw new Error('Passed book data or configuration is missing.');
       }
-      const booksData = useBookDataStore.getState().booksData;
-      const config = booksData[id]?.config as BookConfig;
-      const configViewSettings = config.viewSettings!;
-      set((state) => ({
-        viewStates: {
-          ...state.viewStates,
-          [key]: {
-            ...state.viewStates[key],
-            key,
-            view: null,
-            isPrimary,
-            loading: false,
-            error: null,
-            progress: null,
-            ribbonVisible: false,
-            viewSettings: JSON.parse(JSON.stringify(configViewSettings)) as ViewSettings,
-          },
-        },
+      
+      console.log(`[initViewState ${key}] Successfully using passed bookData.`);
+
+      // --- Initialize View Settings --- 
+      const { settings: globalSettings } = useSettingsStore.getState();
+      const initialViewSettings: ViewSettings = JSON.parse(JSON.stringify({
+          ...globalSettings.globalViewSettings,
+          ...(bookData.config.viewSettings || {}) 
       }));
+      console.log(`[initViewState ${key}] Initialized viewSettings for key.`);
+
+      // Set the final state, setting loading to false
+      console.log(`[initViewState ${key}] Setting final viewState (loading: false)`);
+      set((state) => ({
+          viewStates: {
+              ...state.viewStates,
+              [key]: { 
+                  key: key,
+                  view: null,
+                  isPrimary: isPrimary,
+                  loading: false,
+                  error: null,
+                  progress: null,
+                  ribbonVisible: false,
+                  viewSettings: initialViewSettings, 
+              },
+          },
+      }));
+      success = true;
+
     } catch (error) {
-      console.error(error);
-      set((state) => ({
-        viewStates: {
-          ...state.viewStates,
-          [key]: {
-            ...state.viewStates[key],
-            key: '',
-            view: null,
-            isPrimary: false,
-            loading: false,
-            error: 'Failed to load book.',
-            progress: null,
-            ribbonVisible: false,
-            viewSettings: null,
-          },
-        },
-      }));
+         console.error(`[initViewState ${key}] !!! Error during view state initialization:`, error);
+         set((state) => ({
+            viewStates: {
+                ...state.viewStates,
+                [key]: {
+                    ...state.viewStates[key]!,
+                    loading: false,
+                    error: error instanceof Error ? error.message : 'Failed to initialize view state.',
+                    viewSettings: null,
+                },
+            },
+        }));
     }
+    console.log(`[initViewState ${key}] Finished. Success: ${success}`);
   },
   getViewSettings: (key: string) => get().viewStates[key]?.viewSettings || null,
   setViewSettings: (key: string, viewSettings: ViewSettings) => {

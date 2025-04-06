@@ -7,11 +7,12 @@ import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { Book } from '@/types/book';
 
 export interface UseBooksSyncProps {
-  onSyncStart?: () => void;
-  onSyncEnd?: () => void;
+  // Remove unused props
+  // onSyncStart?: () => void;
+  // onSyncEnd?: () => void;
 }
 
-export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
+export const useBooksSync = (/*{ onSyncStart, onSyncEnd }: UseBooksSyncProps*/) => {
   const { user } = useAuth();
   const { appService } = useEnv();
   const { library, setLibrary } = useLibraryStore();
@@ -19,29 +20,34 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
   const syncBooksPullingRef = useRef(false);
 
   const pullLibrary = async () => {
-    if (!user) return;
-    syncBooks([], 'pull');
+    // console.log('Skipping pullLibrary (sync disabled)');
+    // if (!user) return;
+    // syncBooks([], 'pull');
   };
 
   const pushLibrary = async () => {
-    if (!user) return;
-    const newBooks = getNewBooks();
-    syncBooks(newBooks, 'push');
+    // console.log('Skipping pushLibrary (sync disabled)');
+    // if (!user) return;
+    // const newBooks = getNewBooks();
+    // syncBooks(newBooks, 'push');
   };
 
   useEffect(() => {
+    // console.log('Skipping initial library pull (sync disabled)');
+    /*
     if (!user) return;
     if (syncBooksPullingRef.current) return;
     syncBooksPullingRef.current = true;
-
     pullLibrary();
+    */
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Keep empty dependency array
 
   const lastSyncTime = useRef<number>(0);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getNewBooks = () => {
+    // This function might still be called elsewhere, but push is disabled
     if (!user) return [];
     const newBooks = library.filter(
       (book) => lastSyncedAtBooks < book.updatedAt || lastSyncedAtBooks < (book.deletedAt ?? 0),
@@ -50,6 +56,8 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
   };
 
   useEffect(() => {
+    // console.log('Skipping timed library sync (sync disabled)');
+    /*
     if (!user) return;
     const now = Date.now();
     const timeSinceLastSync = now - lastSyncTime.current;
@@ -69,10 +77,15 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
         SYNC_BOOKS_INTERVAL_SEC * 1000 - timeSinceLastSync,
       );
     }
+    */
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+    
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [library]);
+  }, [library, user]); // Dependencies still relevant if logic were enabled
 
   const updateLibrary = async () => {
+    // console.log('Skipping updateLibrary from sync (sync disabled)');
+    /*
     if (!syncedBooks?.length) return;
     // Process old books first so that when we update the library the order is preserved
     syncedBooks.sort((a, b) => a.updatedAt - b.updatedAt);
@@ -107,19 +120,22 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
         }
       }
     };
-    onSyncStart?.();
+    // These were the calls using the props:
+    // onSyncStart?.();
     const batchSize = 3;
     for (let i = 0; i < syncedBooks.length; i += batchSize) {
       const batch = syncedBooks.slice(i, i + batchSize);
       await Promise.all(batch.map(processNewBook));
     }
-    onSyncEnd?.();
+    // onSyncEnd?.();
     setLibrary(updatedLibrary);
     appService?.saveLibraryBooks(updatedLibrary);
+    */
   };
 
   useEffect(() => {
-    updateLibrary();
+    // console.log('Skipping updateLibrary trigger (sync disabled)');
+    // updateLibrary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedBooks]);
 

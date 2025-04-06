@@ -29,7 +29,11 @@ import Notebook from './notebook/Notebook';
 import BooksGrid from './BooksGrid';
 import TTSControl from './tts/TTSControl';
 
-const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
+const ReaderContent: React.FC<{ ids?: string; filePath?: string; settings: SystemSettings }> = ({
+  ids,
+  filePath,
+  settings,
+}) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
@@ -45,36 +49,103 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   useBookShortcuts({ sideBarBookKey, bookKeys });
 
+  // --- Subscribe directly to bookData for the current book --- 
+  const currentBookKey = bookKeys?.[0]; 
+  
+  // Correctly extract the ID (hash or full path) from the key
+  // The key format is `${id}-${uniqueSuffix}`
+  const currentBookId = currentBookKey 
+    ? currentBookKey.substring(0, currentBookKey.lastIndexOf('-')) 
+    : null;
+
+  // Select the bookData for this ID from the store
+  const bookData = useBookDataStore((state) => 
+    currentBookId ? state.booksData[currentBookId] : undefined
+  );
+
+  // --- Initialization Effect ---
   useEffect(() => {
-    if (isInitiating.current) return;
-    isInitiating.current = true;
+    if (isInitiating.current || searchParams === null) {
+      return; 
+    }
 
-    const bookIds = ids || searchParams?.get('ids') || '';
-    const initialIds = bookIds.split(BOOK_IDS_SEPARATOR).filter(Boolean);
-    const initialBookKeys = initialIds.map((id) => `${id}-${uniqueId()}`);
-    setBookKeys(initialBookKeys);
-    const uniqueIds = new Set<string>();
-    console.log('Initialize books', initialBookKeys);
-    initialBookKeys.forEach((key, index) => {
-      const id = key.split('-')[0]!;
-      const isPrimary = !uniqueIds.has(id);
-      uniqueIds.add(id);
-      if (!getViewState(key)) {
-        initViewState(envConfig, id, key, isPrimary).catch((error) => {
-          console.log('Error initializing book', key, error);
-        });
-        if (index === 0) setSideBarBookKey(key);
+    const currentFilePath = filePath;
+    const currentIdsString = ids || searchParams.get('ids') || ''; 
+    let sourceFound = false;
+    let bookKeyToInit: string | null = null;
+    let idToInit: string | null = null;
+    let isFilePathSource = false;
+
+    if (currentFilePath) {
+      console.log('ReaderContent Effect: Source is filePath:', currentFilePath);
+      sourceFound = true;
+      isFilePathSource = true;
+      // Generate a stable key if possible, or use uniqueId for temporary files
+      bookKeyToInit = `${currentFilePath}-${uniqueId()}`; 
+      idToInit = currentFilePath;
+      setBookKeys([bookKeyToInit]);
+      setSideBarBookKey(bookKeyToInit);
+    } else if (currentIdsString) {
+      const initialIds = currentIdsString.split(BOOK_IDS_SEPARATOR).filter(Boolean);
+      if (initialIds.length > 0) {
+        console.log('ReaderContent Effect: Source is ids:', initialIds);
+        sourceFound = true;
+        isFilePathSource = false;
+        const initialBookKeys = initialIds.map((id) => `${id}-${uniqueId()}`);
+        bookKeyToInit = initialBookKeys[0]!;
+        idToInit = initialIds[0]!;
+        setBookKeys(initialBookKeys);
+        setSideBarBookKey(bookKeyToInit);
+      } else {
+         console.warn('ReaderContent Effect: ids string provided but empty.');
       }
-    });
+    } 
+    
+    if (sourceFound && bookKeyToInit && idToInit && !isInitiating.current) {
+        isInitiating.current = true;
+        setLoading(true); // Set loading state
 
+        const initProcess = async () => {
+            try {
+                console.log(`ReaderContent Effect: Ensuring book data for ID/Path: ${idToInit}`);
+                const { ensureBookData } = useBookDataStore.getState();
+                // Capture the returned bookData
+                const ensuredBookData = await ensureBookData(envConfig, idToInit);
+                console.log(`ReaderContent Effect: Book data ensured. Calling initViewState for key: ${bookKeyToInit}`);
+                // Pass the ensured data directly to initViewState
+                await initViewState(envConfig, idToInit, bookKeyToInit!, ensuredBookData, true);
+                console.log(`ReaderContent Effect: initViewState finished for key: ${bookKeyToInit}`);
+            } catch (error) {
+                console.error(`ReaderContent Effect: Error during init process for ${bookKeyToInit}:`, error);
+                navigateToLibrary(router);
+            } finally {
+                setLoading(false);
+                isInitiating.current = false;
+            }
+        };
+
+        initProcess();
+
+    } else if (!sourceFound && searchParams !== null) { // Check searchParams loaded
+        console.warn('ReaderContent Effect: No source found. Redirecting.');
+        navigateToLibrary(router);
+    }
+
+    // --- Setup Show Book Details Listener --- 
     const handleShowBookDetails = (event: CustomEvent) => {
       const book = event.detail as Book;
       setShowDetailsBook(book);
-      return true;
     };
-    eventDispatcher.onSync('show-book-details', handleShowBookDetails);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    eventDispatcher.on('show-book-details', handleShowBookDetails);
+
+    // Cleanup listener
+    return () => {
+      eventDispatcher.off('show-book-details', handleShowBookDetails);
+      // Maybe reset initiating flag on unmount?
+      // isInitiating.current = false;
+    };
+
+  }, [filePath, ids, searchParams, setBookKeys, setSideBarBookKey, initViewState, envConfig, navigateToLibrary, router, /* Removed getViewState, setShowDetailsBook */]); // Update dependencies
 
   useEffect(() => {
     if (isTauriAppPlatform()) tauriHandleOnCloseWindow(handleCloseBooks);
@@ -84,7 +155,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       window.removeEventListener('beforeunload', handleCloseBooks);
       eventDispatcher.off('quit-app', handleCloseBooks);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKeys]);
 
   const saveBookConfig = async (bookKey: string) => {
@@ -143,18 +213,26 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     }
   };
 
-  if (!bookKeys || bookKeys.length === 0) return null;
-  const bookData = getBookData(bookKeys[0]!);
-  if (!bookData || !bookData.book || !bookData.bookDoc) {
-    setTimeout(() => setLoading(true), 300);
+  // Loading state display (simplified - use the local loading state)
+  if (loading || !bookKeys || bookKeys.length === 0) {
     return (
-      loading && (
-        <div className={clsx('hero hero-content', appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh')}>
-          <Spinner loading={true} />
-        </div>
-      )
+      <div className={clsx('hero hero-content', appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh')}>
+        <Spinner loading={true} /> 
+      </div>
     );
   }
+
+  // Check if bookData is ready AFTER loading state is false
+  if (!bookData || !bookData.book || !bookData.bookDoc) {
+     console.warn('[ReaderContent] Render: Loading is false, but bookData is still missing/incomplete for', currentBookId);
+     // Maybe show a more specific error or retry state?
+     return (
+       <div className={clsx('hero hero-content', appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh')}>
+         <p>Error loading book data. Please try again.</p> {/* Or a more specific error */}
+         <button onClick={() => navigateToLibrary(router)}>Back to Library</button>
+       </div>
+     );
+   }
 
   return (
     <div className={clsx('flex', appService?.isIOSApp ? 'h-[100vh]' : 'h-dvh')}>

@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { ReadonlyURLSearchParams, useRouter, useSearchParams, redirect } from 'next/navigation';
+import Link from 'next/link';
 
 import { Book } from '@/types/book';
 import { AppService } from '@/types/system';
@@ -50,7 +51,7 @@ const LibraryPageWithSearchParams = () => {
 const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchParams | null }) => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
-  const { token, user } = useAuth();
+  const { user, isLoading: authIsLoading } = useAuth();
   const {
     library: libraryBooks,
     updateBook,
@@ -62,8 +63,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useTheme();
   const { updateAppTheme } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const [loading, setLoading] = useState(false);
-  const isInitiating = useRef(false);
+  const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
@@ -74,12 +74,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const demoBooks = useDemoBooks();
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
+  const isInitiating = useRef(false);
 
   useOpenWithBooks();
 
   const { pullLibrary, pushLibrary } = useBooksSync({
-    onSyncStart: () => setLoading(true),
-    onSyncEnd: () => setLoading(false),
+    onSyncStart: () => setLibraryLoading(true),
+    onSyncEnd: () => setLibraryLoading(false),
   });
 
   usePullToRefresh(containerRef, pullLibrary);
@@ -253,45 +254,56 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   );
 
   useEffect(() => {
-    if (!user) {
-      console.log('LibraryPage: No user found, redirecting to /auth');
+    if (authIsLoading) {
+      console.log('LibraryPage: Waiting for auth...');
+      return;
+    }
+
+    if (!authIsLoading && !user) {
+      console.log('LibraryPage: Auth loaded, no user, redirecting to /auth');
       redirect('/auth');
       return;
     }
 
     if (user && !isInitiating.current) {
-      console.log('LibraryPage: User found, initializing library...');
       isInitiating.current = true;
-      const loadingTimeout = setTimeout(() => setLoading(true), 300);
+      console.log('LibraryPage: User found, initializing library...');
+      setLibraryLoading(true);
+      const loadingTimeout = setTimeout(() => {
+        // Optionally handle long loads
+      }, 5000);
 
       const initLibrary = async () => {
-        const appService = await envConfig.getAppService();
-        if (!appService) return;
+        try {
+          const appSvc = await envConfig.getAppService();
+          if (!appSvc) {
+            console.error('AppService is null during initLibrary');
+            return;
+          }
 
-        const settings = await appService.loadSettings();
-        setSettings(settings);
+          const currentSettings = await appSvc.loadSettings();
+          setSettings(currentSettings);
+          const books = await appSvc.loadLibraryBooks();
 
-        const libraryBooks = await appService.loadLibraryBooks();
-        if (checkOpenWithBooks && isTauriAppPlatform()) {
-          await handleOpenWithBooks(appService, libraryBooks);
-        } else {
-          setCheckOpenWithBooks(false);
-          setLibrary(libraryBooks);
+          if (checkOpenWithBooks && isTauriAppPlatform()) {
+            await handleOpenWithBooks(appSvc, books);
+          } else {
+            setCheckOpenWithBooks(false);
+            setLibrary(books);
+          }
+          setLibraryLoaded(true);
+        } catch (error) {
+          console.error("Failed to initialize library:", error);
+        } finally {
+          clearTimeout(loadingTimeout);
+          setLibraryLoading(false);
+          isInitiating.current = false;
         }
-
-        setLibraryLoaded(true);
-        if (loadingTimeout) clearTimeout(loadingTimeout);
-        setLoading(false);
       };
 
       initLibrary();
     }
-
-    return () => {
-      setCheckOpenWithBooks(false);
-      isInitiating.current = false;
-    };
-  }, [user, searchParams, checkOpenWithBooks, envConfig, handleOpenWithBooks, setCheckOpenWithBooks, setLibrary, setSettings]);
+  }, [user, authIsLoading, searchParams, checkOpenWithBooks, envConfig, handleOpenWithBooks, setCheckOpenWithBooks, setLibrary, setSettings]);
 
   useEffect(() => {
     if (demoBooks.length > 0 && libraryLoaded) {
@@ -311,7 +323,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   }, [demoBooks, libraryLoaded]);
 
   const importBooks = async (files: (string | File)[]) => {
-    setLoading(true);
+    setLibraryLoading(true);
     const failedFiles = [];
     const errorMap: [string, string][] = [
       ['No chapters detected.', _('No chapters detected.')],
@@ -345,7 +357,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       }
     }
     appService?.saveLibraryBooks(libraryBooks);
-    setLoading(false);
+    setLibraryLoading(false);
   };
 
   const selectFilesTauri = async () => {
@@ -507,12 +519,24 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   if (checkOpenWithBooks) {
     return (
-      loading && (
+      libraryLoading && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>
           <Spinner loading />
         </div>
       )
     );
+  }
+
+  if (authIsLoading) {
+    return <div>Authenticating...</div>;
+  }
+
+  if (!user) {
+    return <div>Redirecting to login...</div>;
+  }
+
+  if (libraryLoading || !libraryLoaded) {
+    return <div>Loading Library...</div>;
   }
 
   return (
@@ -531,7 +555,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onToggleSelectMode={handleToggleSelectMode}
         />
       </div>
-      {loading && (
+      {libraryLoading && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>
           <Spinner loading />
         </div>
@@ -587,6 +611,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       )}
       <AboutWindow />
       <Toast />
+      <div style={{ marginBottom: '1rem' }}>
+        <Link href="/test-reader">
+          <button style={{ padding: '0.5rem 1rem' }}>Go to Test Reader Page</button>
+        </Link>
+      </div>
     </div>
   );
 };

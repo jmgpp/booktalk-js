@@ -8,6 +8,7 @@ import posthog from 'posthog-js';
 interface AuthContextType {
   token: string | null;
   user: User | null;
+  isLoading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
 }
@@ -28,13 +29,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     return null;
   });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    let initialCheckDone = false;
+
     const syncSession = (
       session: { access_token: string; refresh_token: string; user: User } | null,
+      markLoadingComplete: boolean = false,
     ) => {
+      console.log(session ? 'Syncing session' : 'Clearing session');
       if (session) {
-        console.log('Syncing session');
         const { access_token, refresh_token, user } = session;
         localStorage.setItem('token', access_token);
         localStorage.setItem('refresh_token', refresh_token);
@@ -43,27 +48,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setToken(access_token);
         setUser(user);
       } else {
-        console.log('Clearing session');
         localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         setToken(null);
         setUser(null);
       }
+      if (markLoadingComplete || initialCheckDone) {
+          setIsLoading(false);
+          initialCheckDone = true;
+      }
     };
+
     const refreshSession = async () => {
       try {
         await supabase.auth.refreshSession();
-      } catch {
-        syncSession(null);
+      } catch (error){
+        console.warn('Refresh session failed:', error);
+        syncSession(null, true); 
+      } finally {
+        if (!initialCheckDone) {
+             setIsLoading(false);
+             initialCheckDone = true;
+        }
       }
     };
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
-      syncSession(session);
+        syncSession(session, true); 
     });
 
-    refreshSession();
+    refreshSession(); 
+
     return () => {
       subscription?.subscription.unsubscribe();
     };
@@ -73,6 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log('Logging in');
     setToken(newToken);
     setUser(newUser);
+    setIsLoading(false);
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
   };
@@ -80,19 +97,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     console.log('Logging out');
     try {
-      await supabase.auth.refreshSession();
-    } catch {
-    } finally {
       await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setToken(null);
       setUser(null);
+      setIsLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ token, user, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
 

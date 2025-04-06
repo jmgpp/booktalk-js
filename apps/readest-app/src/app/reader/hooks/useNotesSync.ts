@@ -29,6 +29,9 @@ export const useNotesSync = (bookKey: string) => {
   };
 
   useEffect(() => {
+    // Disable timed notes sync
+    console.log('Skipping timed notes sync (sync disabled)');
+    /*
     if (!config?.location || !user) return;
     const now = Date.now();
     const timeSinceLastSync = now - lastSyncTime.current;
@@ -48,10 +51,17 @@ export const useNotesSync = (bookKey: string) => {
         SYNC_NOTES_INTERVAL_SEC * 1000 - timeSinceLastSync,
       );
     }
+    */
+    // Cleanup any existing timeout
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config]);
+  }, [config, user]); // Keep dependencies relevant
 
   useEffect(() => {
+    // Disable processing of synced notes
+    console.log('Skipping processing synced notes (sync disabled)');
+    /*
     const processNewNote = (note: BookNote) => {
       const oldNotes = config?.booknotes ?? [];
       const existingNote = oldNotes.find((oldNote) => oldNote.id === note.id);
@@ -74,6 +84,7 @@ export const useNotesSync = (bookKey: string) => {
       ];
       setConfig(bookKey, { booknotes: mergedNotes });
     }
+    */
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncedNotes]);
+  }, [syncedNotes]); // Keep dependency relevant
 };

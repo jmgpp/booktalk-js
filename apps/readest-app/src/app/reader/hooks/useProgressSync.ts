@@ -24,6 +24,7 @@ export const useProgressSync = (bookKey: string) => {
   // flag to prevent accidental sync without first pulling the config
   const configSynced = useRef(false);
   const firstPulled = useRef(false);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pushConfig = (bookKey: string, config: BookConfig | null) => {
     if (!config || !user) return;
@@ -76,29 +77,56 @@ export const useProgressSync = (bookKey: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
 
-  const lastProgressSyncTime = useRef<number>(0);
-  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!config?.location || !user) return;
+  const lastSyncTime = useRef<number>(0);
 
+  useEffect(() => {
+    if (!user) return;
+    if (!config || !config.location || config.location === '') return;
     const now = Date.now();
-    const timeSinceLastSync = now - lastProgressSyncTime.current;
+    const timeSinceLastSync = now - lastSyncTime.current;
     if (timeSinceLastSync > SYNC_PROGRESS_INTERVAL_SEC * 1000) {
-      lastProgressSyncTime.current = now;
-      syncConfig();
+      lastSyncTime.current = now;
+      // const compressedConfig = compressConfig(config);
+      // if (!compressedConfig) return;
+      // Comment out push sync
+      // console.log('Skipping syncConfigs push (progress sync disabled)');
+      // syncConfigs([compressedConfig], bookHash, 'push');
     } else {
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
       syncTimeoutRef.current = setTimeout(
         () => {
-          lastProgressSyncTime.current = Date.now();
+          lastSyncTime.current = Date.now();
+          // const compressedConfig = compressConfig(config);
+          // if (!compressedConfig) return;
+          // Comment out push sync
+          // console.log('Skipping timed syncConfigs push (progress sync disabled)');
+          // syncConfigs([compressedConfig], bookHash, 'push');
           syncTimeoutRef.current = null;
-          syncConfig();
         },
         SYNC_PROGRESS_INTERVAL_SEC * 1000 - timeSinceLastSync,
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config]);
+  }, [config?.location, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    // Comment out pull sync
+    // console.log('Skipping syncConfigs pull (progress sync disabled)');
+    // syncConfigs([], bookHash, 'pull');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (!syncedConfigs || !syncedConfigs.length || !config) return;
+    const syncedConfig = syncedConfigs[0];
+    if (!syncedConfig) return;
+    if (syncedConfig.updatedAt > config.updatedAt) {
+      setConfig(bookKey, { ...config, ...syncedConfig });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncedConfigs, user, config, setConfig, bookKey]);
 
   // sync progress once when the book is opened
   useEffect(() => {

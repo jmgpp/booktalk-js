@@ -15,7 +15,7 @@ import { Toast } from '@/components/Toast';
 import ReaderContent from './ReaderContent';
 import { useSidebarStore } from '@/store/sidebarStore';
 
-const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
+const Reader: React.FC<{ ids?: string; filePath?: string }> = ({ ids, filePath }) => {
   const { envConfig, appService } = useEnv();
   const { settings, setSettings } = useSettingsStore();
   const { isSideBarVisible } = useSidebarStore();
@@ -40,6 +40,13 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     initLibrary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (filePath) {
+      console.log('Reader component received filePath:', filePath);
+      // Next step: Pass this path to where the book is actually loaded.
+    }
+  }, [filePath]);
 
   return (
     getVisibleLibrary().length > 0 &&
