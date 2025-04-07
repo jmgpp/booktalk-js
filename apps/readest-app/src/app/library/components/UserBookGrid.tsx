@@ -23,14 +23,14 @@ export default function UserBookGrid({ books, onBookClick }: UserBookGridProps) 
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
       {books.map((book) => (
         <div 
           key={book.id} 
-          className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+          className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow cursor-pointer h-full flex flex-col"
           onClick={() => onBookClick(book)}
         >
-          <figure className="h-48 bg-base-300 relative">
+          <figure className="h-64 bg-base-300 relative">
             {book.thumbnail_url ? (
               <img 
                 src={book.thumbnail_url} 
@@ -43,7 +43,7 @@ export default function UserBookGrid({ books, onBookClick }: UserBookGridProps) 
               </div>
             )}
           </figure>
-          <div className="card-body p-3">
+          <div className="card-body p-3 flex-1 flex flex-col">
             <h2 className="card-title text-sm line-clamp-2">{book.title}</h2>
             <p className="text-xs text-gray-500 line-clamp-1">
               {book.authors?.join(', ') || _('Unknown author')}
