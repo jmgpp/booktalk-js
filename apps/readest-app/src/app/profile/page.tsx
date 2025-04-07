@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client'; // Use @ alias now
 import { User } from '@supabase/supabase-js';
 import { useAuth } from '@/context/AuthContext'; // Import auth context if using one
-import { FaEdit, FaSave, FaTimes } from 'react-icons/fa'; // Icons for editing
+import { FaEdit, FaSave, FaTimes, FaSignOutAlt } from 'react-icons/fa'; // Icons for editing + logout
 import AvatarCropperModal from './components/AvatarCropperModal'; // Import the modal
 
 // Define a type for the profile data we expect
@@ -17,7 +17,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
-  const { user } = useAuth(); // Get user from Auth context (assuming it exists)
+  const { user, logout } = useAuth(); // Get user AND logout from Auth context
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -223,6 +223,23 @@ export default function ProfilePage() {
     }
   };
 
+  // Add handleLogout function
+  const handleLogout = async () => {
+    try {
+      await logout(); // Call logout from context
+      // Redirect to login or home after logout
+      // Assuming you have a router instance, you might need to import `useRouter` from `next/navigation`
+      // import { useRouter } from 'next/navigation';
+      // const router = useRouter();
+      // router.push('/auth'); 
+      // For now, just logging out without explicit redirect
+      console.log("User logged out"); 
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setError('Logout failed. Please try again.');
+    }
+  };
+
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading Profile...</div>;
   }
@@ -353,6 +370,17 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Add Logout Button outside the main profile card, maybe below the widgets or at the bottom */}
+        <div className="mt-8 flex justify-center">
+          <button 
+            onClick={handleLogout} 
+            className="btn btn-outline btn-error"
+            disabled={uploading} // Disable if profile update is in progress
+          >
+            <FaSignOutAlt className="mr-2" /> Logout
+          </button>
         </div>
 
         {/* Mockup Widgets Section */} 
