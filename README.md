@@ -14,6 +14,7 @@ This project is built upon the foundation of the excellent open-source ebook rea
 *   **Desktop Wrapper:** Tauri
 *   **Backend & Realtime:** Supabase
 *   **Ebook Viewer Core:** Based on Readest / Foliate.js
+*   **Book Data API:** Google Books API
 
 ## Project Status
 
@@ -22,6 +23,13 @@ This project is built upon the foundation of the excellent open-source ebook rea
 *   Initial project plan and codebase analysis documents created.
 *   Implemented web file loading via browser API for testing/prototyping (using temporary in-memory store).
 *   Implemented profile page with Supabase data fetching, editing (name/username), and avatar upload/cropping/resizing.
+*   Integrated Google Books API for searching books.
+*   Implemented library page with UI for:
+    * Searching and browsing books from Google Books API
+    * Viewing book details
+    * Adding books to personal library
+    * Responsive grid layout for displaying user's book collection
+    * Auto-saving book status and ratings
 
 ## Documentation
 
@@ -33,5 +41,7 @@ This project is built upon the foundation of the excellent open-source ebook rea
 1.  Ensure Node.js (v22 recommended), pnpm, and Rust/Cargo are installed (see [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)).
 2.  Install dependencies: `pnpm install`
 3.  Run PDF.js setup: `pnpm --filter @readest/readest-app setup-pdfjs`
-4.  Run Desktop Dev Server: `pnpm tauri dev`
-5.  Run Web Dev Server: `pnpm dev-web`
+4.  Set up a Supabase project and add environment variables
+5.  Set up a Google Books API key
+6.  Run Desktop Dev Server: `pnpm tauri dev`
+7.  Run Web Dev Server: `pnpm dev-web`
