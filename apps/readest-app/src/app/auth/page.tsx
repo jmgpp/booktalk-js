@@ -34,7 +34,9 @@ export default function AuthPage() {
   const headerRef = useRef<HTMLDivElement>(null);
 
   const getTauriRedirectTo = (isOAuth: boolean) => {
-    return DEEPLINK_CALLBACK;
+    return isOAuth && process.env.NODE_ENV === 'development' 
+      ? `${window.location.origin}/auth/callback`
+      : DEEPLINK_CALLBACK;
   };
 
   const getWebRedirectTo = () => {
@@ -170,11 +172,14 @@ export default function AuthPage() {
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}
           theme={isDarkMode ? 'dark' : 'light'}
-          providers={[]}
+          providers={['google']}
           view="sign_in"
           showLinks={true}
-          redirectTo={isTauriAppPlatform() ? getTauriRedirectTo(false) : getWebRedirectTo()}
+          redirectTo={isTauriAppPlatform() ? getTauriRedirectTo(true) : getWebRedirectTo()}
           localization={getAuthLocalization()}
+          providerScopes={{
+            google: 'https://www.googleapis.com/auth/drive.file email profile'
+          }}
         />
       </div>
     </div>

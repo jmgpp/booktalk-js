@@ -12,6 +12,18 @@ const nextConfig = {
   // See https://nextjs.org/docs/messages/export-image-api for different workarounds.
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'books.google.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lrgrbzcufefdblmswlzl.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
   devIndicators: false,
   // Configure assetPrefix or else the server won't properly resolve your assets.

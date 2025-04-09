@@ -3,11 +3,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client'; // Use @ alias now
 import { User } from '@supabase/supabase-js';
 import { useAuth } from '@/context/AuthContext'; // Import auth context if using one
 import { FaEdit, FaSave, FaTimes, FaSignOutAlt } from 'react-icons/fa'; // Icons for editing + logout
 import AvatarCropperModal from './components/AvatarCropperModal'; // Import the modal
+import { navigateToLogin } from '@/utils/nav';
 
 // Define a type for the profile data we expect
 interface ProfileData {
@@ -18,6 +20,7 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const { user, logout } = useAuth(); // Get user AND logout from Auth context
+  const router = useRouter(); // Add router for redirection
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -227,13 +230,8 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       await logout(); // Call logout from context
-      // Redirect to login or home after logout
-      // Assuming you have a router instance, you might need to import `useRouter` from `next/navigation`
-      // import { useRouter } from 'next/navigation';
-      // const router = useRouter();
-      // router.push('/auth'); 
-      // For now, just logging out without explicit redirect
-      console.log("User logged out"); 
+      // Redirect to login page
+      navigateToLogin(router);
     } catch (error) {
       console.error('Logout failed:', error);
       setError('Logout failed. Please try again.');

@@ -14,7 +14,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { QuotaType, UserPlan } from '@/types/user';
 import { getStoragePlanData, getUserPlan } from '@/utils/access';
-import { navigateToLibrary } from '@/utils/nav';
+import { navigateToLibrary, navigateToLogin } from '@/utils/nav';
 import { deleteUser } from '@/libs/user';
 import { eventDispatcher } from '@/utils/event';
 import { Toast } from '@/components/Toast';
@@ -68,7 +68,7 @@ const ProfilePage = () => {
     settings.keepLogin = false;
     setSettings(settings);
     saveSettings(envConfig, settings);
-    navigateToLibrary(router);
+    navigateToLogin(router);
   };
 
   const handleDeleteRequest = () => {

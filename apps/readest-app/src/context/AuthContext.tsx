@@ -4,6 +4,7 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
 import posthog from 'posthog-js';
+import { createBookTalkFolder } from '@/services/googleDrive';
 
 interface AuthContextType {
   token: string | null;
@@ -30,6 +31,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return null;
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Initialize user's Google Drive folder
+  useEffect(() => {
+    if (user) {
+      const initializeDriveFolder = async () => {
+        try {
+          // Check if user has Google authentication
+          const { data: tokenData, error } = await supabase
+            .from('user_drive_tokens')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          // Only proceed if we successfully found tokens (no error)
+          if (tokenData && !error) {
+            // User has Google authentication, create folder if needed
+            await createBookTalkFolder();
+          }
+        } catch (error) {
+          // User might not have Google authentication yet or table doesn't exist
+          console.log('No Google Drive tokens found for user or table does not exist');
+        }
+      };
+      
+      initializeDriveFolder();
+    }
+  }, [user]);
 
   useEffect(() => {
     let initialCheckDone = false;
